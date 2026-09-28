@@ -166,7 +166,25 @@ models and generated images are separate and remain available.
 Thanks to Peter Neill / ShootTheSound for Fizgig H3 Still, ComfyUI contributors,
 MiniMax, Haoming02 / Forge Neo, the Forge / AUTOMATIC1111 community, and the
 Project Invisible extensions used as integration references.
-Community thanks: r/sdforall, r/SECourses and r/malcolmrey.
 
 See `NOTICE`, `LICENSE`, `vendor/ComfyUI/LICENSE` and
 `pi_h3/vendor/FIZGIG-LICENSE`. Model licenses remain separate.
+
+## Special Thanks
+
+Special thanks to:
+
+- [r/sdforall](https://www.reddit.com/r/sdforall/) — community discussion and testing
+- [r/SECourses](https://www.reddit.com/r/SECourses/) — community discussion and testing
+- [r/malcolmrey](https://www.reddit.com/r/malcolmrey/) — community discussion and testing
+- [**Haoming02 / sd-webui-forge-classic (neo branch)**](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo) — the Forge Neo tree this extension targets
+- [**ShootTheSound / Peter Neill**](https://github.com/shootthesound) and [**ComfyUI-Fizgig-H3-Still**](https://github.com/shootthesound/ComfyUI-Fizgig-H3-Still/tree/main) — H3 still-image latent and decoder implementation
+- [**Adeliox**](https://github.com/Adeliox) — original Klein Head Swap
+- [Alissonerdx](https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap) — BFS (Best Face Swap) workflow and LoRAs
+- [PozzettiAndrea / ComfyUI-SAM3](https://github.com/PozzettiAndrea/ComfyUI-SAM3) and [Meta SAM3](https://github.com/facebookresearch/sam3) — segmentation workflow inspiration across Project Invisible
+- [**ComfyUI**](https://github.com/comfyanonymous/ComfyUI) — H3 backend and upstream sampler/scheduler coverage
+- The Forge / AUTOMATIC1111 community — for the extension ecosystem this plugs into
+- Project Invisible extensions — memory policy, GPU compatibility and extension philosophy
+
+Thank you to the wider Forge, Diffusers, Qwen, DeGrid and open-source communities.
+Head-swap, BFS and SAM3 acknowledgments recognize the wider ecosystem; those tools are not bundled H3 features.
