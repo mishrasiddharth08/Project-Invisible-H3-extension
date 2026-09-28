@@ -1,0 +1,8 @@
+.pi-h3-panel { border-left: 2px solid #7c99bc; }
+.pi-h3-dual-progress { margin-top: 24px; }
+.pi-h3-dual-progress > .pi-h3-current { top: -38px; z-index: 2; }
+.pi-h3-current .progress { min-width: 8em; }
+@media (prefers-reduced-motion: no-preference) {
+  .pi-h3-developing img { animation: pi-h3-reveal .18s ease-in; }
+  @keyframes pi-h3-reveal { from { opacity: .7; } to { opacity: 1; } }
+}

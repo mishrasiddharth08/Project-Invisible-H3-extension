@@ -1,0 +1,5 @@
+# Installed into vendor/python by install.py, not into Forge's shared packages.
+comfy-aimdo==0.5.5
+comfy-kitchen==0.2.35
+# Uses Forge's existing torch/torchvision, numpy, Pillow, transformers>=4.50.3,
+# tokenizers, safetensors>=0.4.2, einops, scipy, torchsde, psutil, pyyaml, av.
