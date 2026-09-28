@@ -121,6 +121,7 @@ class Engine:
     def __init__(self):
         self.key = None
         self.model = self.clip = self.vae = None
+        self.cond_cache = {}
 
     def load(self, paths):
         import comfy.sd
@@ -172,6 +173,21 @@ class Engine:
             cond = [[value, {**metadata, 'minimax_refs': blocks}] for value, metadata in cond]
         return cond
 
+    def cached_condition(self, positive_prompt, negative_prompt, references, width, height, cfg):
+        """Encode each prompt once per batch; identical requests reuse the conditioning."""
+        import hashlib
+        from .assets import fingerprint
+        def encode(prompt):
+            key = hashlib.sha256(repr((prompt, width, height, fingerprint(references) if references else ())).encode('utf-8', 'replace')).hexdigest()
+            cached = self.cond_cache.get(key)
+            if cached is None:
+                cached = self.condition(prompt, references, width, height)
+                if len(self.cond_cache) >= 4:
+                    self.cond_cache.clear()
+                self.cond_cache[key] = cached
+            return cached
+        return encode(positive_prompt), encode(positive_prompt if cfg == 1 else negative_prompt)
+
     def run(self, request):
         import gc
         import torch
@@ -186,8 +202,7 @@ class Engine:
         candidate = None
         try:
             emit('status', text='encoding prompt and references')
-            positive = self.condition(request['prompt'], request['references'], width, height)
-            negative = self.condition(request['negative'], request['references'], width, height) if request['cfg'] != 1 else positive
+            positive, negative = self.cached_condition(request['prompt'], request['negative'], request['references'], width, height, request['cfg'])
             if request['adapters']:
                 # One disposable clone owns every adapter, including quantized patches.
                 candidate = self.model.clone()
