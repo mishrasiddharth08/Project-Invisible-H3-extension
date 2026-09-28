@@ -195,7 +195,7 @@ def _ui_load_state(has_denoise):
         restore_saved_selection()
     value = getattr(shared.opts, 'sd_model_checkpoint', None)
     active = getattr(shared.opts, 'forge_preset', None) == PRESET and selected_value(value)
-    updates = [gr.update(value=value), gr.update(value=[]) if active else gr.skip(), gr.update(visible=active)]
+    updates = [gr.update(value=value), gr.update(value=[]) if active else gr.skip(), gr.update(visible=active, open=False)]
     if has_denoise:
         updates.append(gr.update(value=1.0) if active else gr.skip())
     return updates
@@ -211,7 +211,7 @@ def _ui_selection_state(value, has_denoise):
     # stale browser value; a real switch is cancelled by the backend option hook.
     if not active and not backend_active:
         _cancel(f'UI selected non-H3 checkpoint: {value!r}')
-    updates = [gr.update(visible=active), gr.update(value=[]) if active else gr.skip()]
+    updates = [gr.update(visible=active, open=False), gr.update(value=[]) if active else gr.skip()]
     if has_denoise:
         updates.append(gr.update(value=1.0) if active else gr.skip())
     return updates
