@@ -117,6 +117,19 @@ def generate(p, options):
                         result = image.copy()
                 if result.size != (p.width, p.height):
                     raise RuntimeError('H3 returned incorrect dimensions; output was not saved.')
+                if editing and options.get('drift') and refs:
+                    # Pixel-drift fix (Mozer's PixelDriftFix): realign the edit to the source framing.
+                    from .drift import align
+                    try:
+                        aligned = align(refs[0], result)
+                    except Exception as error:
+                        print('[PI-H3] Pixel-drift fix skipped:', error)
+                        aligned = None
+                    if aligned is not None and aligned.size == (p.width, p.height):
+                        result = aligned
+                    elif aligned is not None:
+                        print('[PI-H3] Pixel-drift fix skipped: aligned size', aligned.size,
+                              'does not match the requested', (p.width, p.height))
                 progress.finish(result)
                 info = (f'{prompt}\nNegative prompt: {negative}\nSteps: {p.steps}, Sampler: {p.sampler_name}, '
                         f'Schedule type: {scheduler}, CFG scale: {p.cfg_scale}, Seed: {seed}, Size: {p.width}x{p.height}, '

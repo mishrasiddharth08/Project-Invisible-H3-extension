@@ -38,6 +38,7 @@ class Script(scripts.Script):
             with gr.Tab('Memory'):
                 memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Memory mode', elem_id=f'pi_h3_{mode}_memory')
                 keep = gr.Checkbox(False, label='Keep model in memory between runs', elem_id=f'pi_h3_{mode}_keep')
+                drift = gr.Checkbox(is_img2img, label='Pixel-drift fix: realign edits to the source image', elem_id=f'pi_h3_{mode}_drift')
             with gr.Tab('Files'):
                 gr.Markdown('[Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main) · place under `models/MiniMax-H3/` · **Generate never downloads**')
                 refresh = gr.Button('Refresh local files', size='sm', elem_id=f'pi_h3_{mode}_refresh')
@@ -54,7 +55,7 @@ class Script(scripts.Script):
                 with gr.Tab('References'):
                     refs.extend(gr.Image(type='pil', label=f'Picture {i}', elem_id=f'pi_h3_i2i_ref_{i}') for i in range(2, 10))
         forge.register_ui_binding(panel, is_img2img)
-        return [dit, clip, vae, lora, strength, memory, keep, *refs]
+        return [dit, clip, vae, lora, strength, memory, keep, drift, *refs]
 
 
 try:

@@ -4,7 +4,7 @@ from .config import ROOT, LABEL, PRESET
 from . import runtime
 from .assets import classify, scan
 
-KEYS = ('dit', 'clip', 'vae', 'lora', 'strength', 'memory', 'keep_loaded')
+KEYS = ('dit', 'clip', 'vae', 'lora', 'strength', 'memory', 'keep_loaded', 'drift')
 _UI_BINDINGS = []
 _selection_state = threading.local()
 
