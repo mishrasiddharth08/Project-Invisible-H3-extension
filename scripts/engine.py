@@ -28,6 +28,7 @@ class Script(scripts.Script):
             gr.Markdown('Best: ER SDE / Simple / CFG 1 / 50 steps · multiples of 32 · ≥3 MP recommended'
                         + (' · Denoise = 1 · use `<Picture 1>` for edits' if is_img2img else ' · editing via img2img'))
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
+                refs = []
                 with gr.Tab('Models'):
                     dit = gr.Dropdown(['Auto'] + inventory['dit'], value='Auto', label='Model', elem_id=f'pi_h3_{mode}_dit')
                     clip = gr.Dropdown(['Auto'] + inventory['clip'], value='Auto', label='Text encoder', elem_id=f'pi_h3_{mode}_clip')
