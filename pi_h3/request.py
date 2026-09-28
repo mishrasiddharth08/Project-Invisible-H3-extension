@@ -11,6 +11,10 @@ def validate(width, height, steps, cfg, sampler, scheduler, editing=False, image
              denoise=1.0, hires=False):
     if any(int(v) != v or not 64 <= v <= 4096 or v % 32 for v in (width, height)):
         raise ValueError('H3 width and height must be multiples of 32, between 64 and 4096.')
+    if width * height < 3 * 1024 * 1024:
+        # Fizgig Still guidance: below ~3 MP the decoder produces waxy/plastic-looking skin.
+        print('[PI-H3] Warning: ' + str(width * height // 1024) + ' KP is below the recommended 3 MP; '
+              'skin may look plastic. Use e.g. 1536x2048.')
     if int(steps) != steps or not 1 <= steps <= 150:
         raise ValueError('Choose 1–150 steps.')
     if not math.isfinite(cfg) or not 1 <= cfg <= 20:
