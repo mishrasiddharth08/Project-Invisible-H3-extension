@@ -21,7 +21,10 @@ def install():
         elif target.endswith('_scheduler'): item.default='Simple'
         elif target.endswith('_step'): item.default=50
         elif target.endswith('_cfg'): item.default=1.0
-        elif target.endswith(('_width','_height')): item.default=1536
+        elif target.endswith(('_width','_height')):
+            item.default=1536
+            # Officially supported H3 sizes: 64-4096 in multiples of 32 (Fizgig Still guidance; >=3 MP recommended).
+            item.component_args={'minimum':64,'maximum':4096,'step':32}
         elif target=='forge_checkpoint_'+NAME: item.default=LABEL
         elif target=='forge_additional_modules_'+NAME: item.default=[]
         ours[target]=item
