@@ -58,4 +58,5 @@ class Progress:
         self.status('image complete')
 
     def close(self):
+        self.shared.state.textinfo = None
         self.shared.total_tqdm.clear()

@@ -149,7 +149,7 @@ class Engine:
             image = comfy.utils.common_upscale(image.movedim(-1, 1), tw, th, 'lanczos', 'disabled').movedim(1, -1)
             items.append({'type': 'image', 'data': image})
             blocks.append({'kind': 'image', 'latent_h': th // 16, 'latent_w': tw // 16, 'latent': self.vae.encode(image)})
-        tokens = self.clip.tokenize(prompt, **({'minimax_ref_items': items} if items else {'images': []}))
+        tokens = self.clip.tokenize(prompt, **({'minimax_ref_items': items} if items else {}))
         cond = self.clip.encode_from_tokens_scheduled(tokens)
         if blocks:
             cond = [[value, {**metadata, 'minimax_refs': blocks}] for value, metadata in cond]

@@ -58,8 +58,8 @@ def generate(p, options):
                 if shared.state.interrupted or _selection_cancel.is_set():
                     break
                 shared.state.skipped = False
-                prompt = p.prompt[index % len(p.prompt)] if isinstance(p.prompt, list) else p.prompt
-                negative = p.negative_prompt[index % len(p.negative_prompt)] if isinstance(p.negative_prompt, list) else p.negative_prompt
+                prompt = p.prompt[index % len(p.prompt)] if isinstance(p.prompt, list) and p.prompt else p.prompt
+                negative = p.negative_prompt[index % len(p.negative_prompt)] if isinstance(p.negative_prompt, list) and p.negative_prompt else p.negative_prompt
                 styles = getattr(p, 'styles', [])
                 if styles:
                     prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, styles)
@@ -81,13 +81,14 @@ def generate(p, options):
                 if mode not in ('auto', 'lowvram', 'cpu'):
                     raise ValueError('Invalid H3 memory mode.')
                 progress.start(index, p.width, p.height)
+                try:
+                    from backend import memory_management
+                except ImportError as error:
+                    raise RuntimeError('Forge memory interface changed; H3 cannot safely load. Update the extension.') from error
+                # Free Forge-side checkpoint/TE/VAE residency before every H3 request; the worker owns the GPU.
+                memory_management.unload_all_models()
                 if _worker is None or _worker.mode != mode or _worker.process.poll() is not None:
                     release()
-                    try:
-                        from backend import memory_management
-                    except ImportError as error:
-                        raise RuntimeError('Forge memory interface changed; H3 cannot safely load. Update the extension.') from error
-                    memory_management.unload_all_models()
                     _worker = Worker(mode)
                     _worker.wait_ready(cancelled)
                 worker = _worker
