@@ -1,4 +1,8 @@
 .pi-h3-panel { border-left: 2px solid #7c99bc; }
+.pi-h3-panel .label-wrap { cursor: pointer; }
+.pi-h3-panel .label-wrap.pi-h3-closed .icon-wrap svg,
+.pi-h3-panel > .label-wrap + * ~ * { transition: none; }
+.pi-h3-panel .label-wrap.pi-h3-closed svg { transform: rotate(0deg); }
 .pi-h3-panel .wrap { gap: 8px; }
 .pi-h3-panel .tabs { margin-top: 4px; }
 .pi-h3-panel .tab-nav { gap: 2px; border-bottom: 1px solid var(--border-color-primary); margin-bottom: 8px; }

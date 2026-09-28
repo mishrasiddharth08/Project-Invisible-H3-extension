@@ -1,5 +1,16 @@
 // Reuse Forge's polling and overall bar; add only the current H3 image bar.
 onUiLoaded(function () {
+    // Fallback collapse for the H3 panel: gradio's Accordion toggle can break
+    // when the panel contains gr.Tabs, so handle the header click directly.
+    document.addEventListener('click', function (event) {
+        const header = event.target.closest('.pi-h3-panel .label-wrap');
+        if (!header) return;
+        const body = header.nextElementSibling;
+        if (!body) return;
+        const hidden = body.style.display === 'none';
+        body.style.display = hidden ? '' : 'none';
+        header.classList.toggle('pi-h3-closed', !hidden);
+    }, true);
     if (typeof requestProgress !== 'function' || requestProgress._h3Dual) return;
     const original = requestProgress;
     requestProgress = function (id, container, gallery, atEnd, onProgress, timeout) {
