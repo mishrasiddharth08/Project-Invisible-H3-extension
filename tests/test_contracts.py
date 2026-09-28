@@ -36,10 +36,15 @@ class Requests(unittest.TestCase):
             request.validate(512,512,20,1,'ER SDE','Simple',True,object(),denoise=.75)
 
     def test_unsupported_native_features(self):
-        for kwargs in ({'sampler':'Euler a'},{'scheduler':'unknown'},{'cfg':float('nan')},{'steps':0},{'hires':True}):
+        for kwargs in ({'cfg':float('nan')},{'steps':0},{'hires':True}):
             data=dict(width=512,height=512,steps=20,cfg=1,sampler='ER SDE',scheduler='Simple')
             data.update(kwargs)
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError): request.validate(**data)
+
+    def test_unsupported_sampler_scheduler_fall_back(self):
+        # A config preset from another model may leave its sampler/scheduler; H3 falls back instead of failing.
+        self.assertEqual(request.validate(512,512,20,1,'Euler a','unknown'),
+                         request.validate(512,512,20,1,'ER SDE','Simple'))
 
     def test_lora_tags(self):
         self.assertEqual(request.parse_loras('cat <lora:minimax_h3_turbo:0.38>'), ('cat',[('minimax_h3_turbo',.38)]))

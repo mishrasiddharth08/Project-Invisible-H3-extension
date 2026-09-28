@@ -16,9 +16,12 @@ def validate(width, height, steps, cfg, sampler, scheduler, editing=False, image
     if not math.isfinite(cfg) or not 1 <= cfg <= 20:
         raise ValueError('H3 CFG must be between 1 and 20; use 1 for the reference workflow.')
     if sampler not in SAMPLERS:
-        raise ValueError('Unsupported H3 sampler. Choose ER SDE, Euler, Heun, DPM++ 2M or Res Multistep.')
+        # A config preset from another model may leave its sampler selected; H3 falls back to its recommended sampler.
+        print('[PI-H3] Unsupported sampler "' + str(sampler) + '" ignored; using ER SDE.')
+        sampler = 'ER SDE'
     if scheduler not in SCHEDULERS and scheduler != 'Automatic':
-        raise ValueError('Unsupported H3 schedule. Choose Simple, Normal, Beta or Karras.')
+        # A config preset from another model may leave its scheduler selected; H3 falls back to its recommended schedule.
+        print('[PI-H3] Unsupported scheduler "' + str(scheduler) + '" ignored; using Simple.')
     if editing and image is None:
         raise ValueError('Add an image in img2img before generating an edit.')
     if mask is not None:
@@ -33,7 +36,11 @@ def validate(width, height, steps, cfg, sampler, scheduler, editing=False, image
 def parse_loras(prompt):
     adapters = []
     def take(match):
-        name, strength = match.group(1), float(match.group(2))
+        name, raw_strength = match.group(1), match.group(2)
+        try:
+            strength = float(raw_strength)
+        except ValueError:
+            raise ValueError('Invalid LoRA strength: <lora:' + name + ':' + raw_strength + '>. Use a number between -2 and 2.') from None
         if not math.isfinite(strength) or not -2 <= strength <= 2:
             raise ValueError('LoRA strength must be between -2 and 2.')
         adapters.append((name, strength))

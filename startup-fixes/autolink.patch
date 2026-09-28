@@ -1,0 +1,126 @@
+--- a/model_autolink/fingerprint.py
++++ b/model_autolink/fingerprint.py
+@@ -4,7 +4,9 @@
+ import json
+ import os
+ import struct
++import threading
+ from dataclasses import dataclass
++from functools import cached_property
+ from pathlib import Path
+ from typing import Iterable
+ 
+@@ -14,6 +16,9 @@
+     "comfy_quant", "weight_scale", "input_scale", "output_scale",
+ )
+ _PREFIXES = ("model.diffusion_model.", "diffusion_model.", "state_dict.")
++_FINGERPRINT_CACHE = {}
++_FINGERPRINT_CACHE_LOCK = threading.RLock()
++_FINGERPRINT_CACHE_LIMIT = 512
+ 
+ 
+ @dataclass(frozen=True)
+@@ -24,7 +29,7 @@
+     sketch: tuple[int, ...]
+     metadata: dict[str, str]
+ 
+-    @property
++    @cached_property
+     def identity(self) -> str:
+         h = hashlib.sha256()
+         h.update(self.format.encode())
+@@ -104,14 +109,44 @@
+     return _make("gguf", path, tensors, metadata)
+ 
+ 
++def _cache_key(path: Path) -> tuple[str, int, int, int]:
++    absolute = os.path.abspath(os.fspath(path))
++    stat = os.stat(absolute)
++    return (os.path.normcase(absolute), stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
++
++
++def _freeze(fp: Fingerprint) -> tuple[str, int, int, tuple[int, ...], tuple[tuple[str, str], ...]]:
++    return fp.format, fp.size, fp.tensor_count, fp.sketch, tuple(fp.metadata.items())
++
++
++def _thaw(value) -> Fingerprint:
++    format_name, size, tensor_count, sketch, metadata = value
++    return Fingerprint(format_name, size, tensor_count, sketch, dict(metadata))
++
++
+ def fingerprint(path: os.PathLike | str) -> Fingerprint:
+-    path = Path(path)
++    path = Path(os.path.abspath(os.fspath(path)))
+     suffix = path.suffix.lower()
+-    if suffix == ".safetensors":
+-        return _safetensors(path)
+-    if suffix == ".gguf":
+-        return _gguf(path)
+-    raise ValueError(f"unsupported metadata-only format: {suffix}")
++    if suffix not in (".safetensors", ".gguf"):
++        raise ValueError(f"unsupported metadata-only format: {suffix}")
++    with _FINGERPRINT_CACHE_LOCK:
++        key = _cache_key(path)
++        cached = _FINGERPRINT_CACHE.get(key)
++        if cached is not None:
++            return _thaw(cached)
++        if suffix == ".safetensors":
++            result = _safetensors(path)
++        else:
++            result = _gguf(path)
++        stale = [old for old in _FINGERPRINT_CACHE if old[0] == key[0]]
++        for old in stale:
++            del _FINGERPRINT_CACHE[old]
++        if _cache_key(path) == key:
++            _FINGERPRINT_CACHE[key] = _freeze(result)
++            while len(_FINGERPRINT_CACHE) > _FINGERPRINT_CACHE_LIMIT:
++                del _FINGERPRINT_CACHE[next(iter(_FINGERPRINT_CACHE))]
++            return _thaw(_FINGERPRINT_CACHE[key])
++        return result
+ 
+ 
+ def similarity(left: Fingerprint, right: Fingerprint) -> float:
+--- a/model_autolink/integration.py
++++ b/model_autolink/integration.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ import threading
++from functools import lru_cache
+ from pathlib import Path
+ 
+ from .compatibility import DEFAULT_QUANT_PRIORITY
+@@ -15,6 +16,11 @@
+ FAMILY_PRESETS = {
+     "qwen_image21": "qwen-image-2.1",
+ }
++
++
++@lru_cache(maxsize=4096)
++def _canonical_path(path) -> str:
++    return str(Path(path).resolve()).casefold()
+ 
+ 
+ def _current_checkpoint_path():
+@@ -33,10 +39,10 @@
+ def _checkpoint_info_for_path(path):
+     from modules import sd_models
+ 
+-    wanted = str(Path(path).resolve()).casefold()
++    wanted = _canonical_path(path)
+     for info in sd_models.checkpoints_list.copy().values():
+         filename = getattr(info, "filename", None)
+-        if filename and str(Path(filename).resolve()).casefold() == wanted:
++        if filename and _canonical_path(filename) == wanted:
+             return info
+     return None
+ 
+@@ -64,7 +70,7 @@
+         if not filename:
+             continue
+         path = Path(filename)
+-        key = str(path.resolve()).casefold()
++        key = _canonical_path(path)
+         if key in seen or not path.is_file():
+             continue
+         seen.add(key)

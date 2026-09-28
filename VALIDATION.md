@@ -6,7 +6,8 @@ H3 video VAE FP16. A separate Forge test instance preserved normal settings.
 
 ## Passed
 
-- 55 automated tests passed, plus Python compilation.
+- 55 automated tests passed, plus Python compilation. (Follow-up fixes
+  September 28, 2026 raised the suite to 58 tests, all passing.)
 
 - Native API and UI portrait generation: 1536 × 2048, ER SDE/Simple,
   CFG 1, 50 steps, no LoRA. API baseline: 86.42 seconds; UI natural portrait:
@@ -27,6 +28,22 @@ H3 video VAE FP16. A separate Forge test instance preserved normal settings.
   wrote no output and exited the worker.
 - Generation recovered after Stop. Keep-loaded mode retained the worker;
   switching to a non-H3 checkpoint exited it successfully.
+
+## Follow-up fixes (September 28, 2026, live session)
+
+- Unsupported sampler/scheduler left by another model's config preset now
+  fall back to ER SDE / Simple with a console note instead of raising
+  ValueError mid-run (regression observed live after switching presets).
+- Malformed LoRA strength tags (e.g. `<lora:x:1.2.3>`) now produce a styled,
+  specific error instead of an unhandled ValueError.
+- Safetensors header validation now whitelists known dtypes; files carrying
+  unknown dtype strings are rejected before reaching the backend.
+- Forge-side models are unloaded before every H3 request (previously only on
+  worker spawn), and the worker clears the CUDA cache after each request,
+  eliminating co-residency VRAM overflow when switching models.
+- Worker transport closes stdin before terminate so queued writes flush.
+- Failed Forge/preset integration in scripts/engine.py now re-raises after
+  logging instead of silently leaving a broken UI.
 
 ## Limits
 

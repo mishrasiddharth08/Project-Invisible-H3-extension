@@ -36,9 +36,11 @@ def header(path):
         shape = value.get('shape')
         if (not isinstance(offsets, list) or len(offsets) != 2 or
                 any(type(x) is not int for x in offsets) or offsets[0] < 0 or offsets[1] < offsets[0] or
-                not isinstance(shape, list) or any(type(x) is not int or x < 0 for x in shape) or
-                not isinstance(value.get('dtype'), str)):
+                not isinstance(shape, list) or any(type(x) is not int or x < 0 for x in shape)):
             raise ValueError('Invalid tensor header: ' + str(path))
+        dtype = value.get('dtype')
+        if dtype not in {'BOOL', 'U8', 'I8', 'I16', 'I32', 'I64', 'F16', 'BF16', 'F32', 'F64'}:
+            raise ValueError('Unsupported tensor dtype ' + repr(dtype) + ': ' + str(path))
         spans.append(tuple(offsets))
     cursor = 0
     for start, end in sorted(spans):

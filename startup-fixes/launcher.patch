@@ -1,0 +1,11 @@
+--- a/smart_launch.py
++++ b/smart_launch.py
+@@ -759,7 +759,7 @@
+             "--uv, --uv-symlink, or --uv-local-cache."
+         )
+         return 1
+-    if not selected_uv_arguments:
++    if not selected_uv_arguments and full_startup:
+         remaining_args.append("--uv")
+         print("UV package manager enabled by default: --uv")
+ 

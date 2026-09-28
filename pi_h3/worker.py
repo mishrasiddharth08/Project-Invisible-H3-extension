@@ -72,7 +72,8 @@ def preview(x0, width, height):
 def lora_patches(model, weights, source, lora_module=None):
     """Load an adapter only when every tensor belongs to this H3 model."""
     if lora_module is None:
-        import comfy.lora as lora_module
+        import comfy.lora
+        lora_module = comfy.lora
     unmatched = []
 
     class Missing(logging.Filter):
@@ -216,6 +217,12 @@ class Engine:
                 candidate.parent = None
             del model
             gc.collect()
+            try:
+                import torch
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            except Exception:
+                pass
 
 
 if __name__ == '__main__':

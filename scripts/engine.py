@@ -66,3 +66,4 @@ try:
     preset.install()
 except Exception as error:
     print('[PI-H3] Integration unavailable:', error)
+    raise

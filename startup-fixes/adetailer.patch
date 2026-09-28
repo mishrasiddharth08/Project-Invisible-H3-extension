@@ -1,0 +1,52 @@
+--- a/adetailer/common.py
++++ b/adetailer/common.py
+@@ -80,15 +80,17 @@
+ def get_models(
+     *dirs: str | os.PathLike[str], huggingface: bool = True
+ ) -> OrderedDict[str, str]:
+-    model_paths = []
++    model_paths: OrderedDict[str, Path] = OrderedDict()
+ 
+     for dir_ in dirs:
+         if not dir_:
+             continue
+-        model_paths.extend(scan_model_dir(Path(dir_)))
++        for path in scan_model_dir(Path(dir_)):
++            if path.stat().st_size > 0 and path.name not in model_paths:
++                model_paths[path.name] = path
+ 
+     models = OrderedDict()
+-    to_download = [
++    standard_models = [
+         "face_yolov8n.pt",
+         "face_yolov8s.pt",
+         "hand_yolov8n.pt",
+@@ -96,7 +98,13 @@
+         "person_yolov8s-seg.pt",
+         "yolov8x-worldv2.pt",
+     ]
+-    models.update(download_models(*to_download, check_remote=huggingface))
++    missing_models = [name for name in standard_models if name not in model_paths]
++    downloaded = download_models(*missing_models, check_remote=huggingface)
++    for name in standard_models:
++        if name in model_paths:
++            models[name] = str(model_paths.pop(name))
++        else:
++            models[name] = downloaded[name]
+ 
+     models.update(
+         {
+@@ -111,10 +119,10 @@
+     for key in invalid_keys:
+         models.pop(key)
+ 
+-    for path in model_paths:
+-        if path.name in models:
++    for name, path in model_paths.items():
++        if name in models:
+             continue
+-        models[path.name] = str(path)
++        models[name] = str(path)
+ 
+     return models
+ 

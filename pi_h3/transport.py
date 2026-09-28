@@ -93,6 +93,11 @@ class Worker:
 
     def close(self):
         process = self.process
+        try:
+            if process.stdin is not None and not process.stdin.closed:
+                process.stdin.close()
+        except (OSError, ValueError):
+            pass
         if process.poll() is None:
             process.terminate()
             try:
