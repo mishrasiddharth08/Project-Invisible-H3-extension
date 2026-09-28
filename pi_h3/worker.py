@@ -30,10 +30,27 @@ def startup():
     import comfy.options
     comfy.options.enable_args_parsing()
     sys.argv += ['--disable-auto-launch', '--disable-dynamic-vram']
-    if mode == 'lowvram':
-        sys.argv.append('--lowvram')
-    elif mode == 'cpu':
+    if mode == 'cpu':
         sys.argv.append('--cpu')
+    else:
+        # VRAM-tier auto mode: full speed on large cards, staged offload on small ones.
+        tier = mode
+        if tier == 'auto':
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    gigabytes = torch.cuda.get_device_properties(0).total_memory / 2**30
+                    tier = 'full' if gigabytes >= 20 else 'lowvram' if gigabytes >= 10 else 'novram'
+                else:
+                    tier = 'cpu'
+            except Exception:
+                tier = 'full'
+        if tier == 'lowvram':
+            sys.argv.append('--lowvram')
+        elif tier == 'novram':
+            sys.argv.append('--novram')
+        elif tier == 'cpu':
+            sys.argv.append('--cpu')
     import comfy.sd
     import comfy.sample
     import comfy.samplers
@@ -210,7 +227,8 @@ class Engine:
                 emit('result', path=request['output'])
         finally:
             # Release request-only patches and restore quantized base weights.
-            mm.unload_all_models()
+            # Models stay resident when the next request uses the same files (batch mode);
+            # the Forge side decides when to truly release via the shutdown request.
             if candidate is not None:
                 candidate.unpatch_model()
                 candidate.patches.clear()
