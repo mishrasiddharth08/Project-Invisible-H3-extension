@@ -1,4 +1,9 @@
 .pi-h3-panel { border-left: 2px solid #7c99bc; }
+.pi-h3-panel .wrap { gap: 8px; }
+.pi-h3-panel .tabs { margin-top: 4px; }
+.pi-h3-panel .tab-nav { gap: 2px; border-bottom: 1px solid var(--border-color-primary); margin-bottom: 8px; }
+.pi-h3-panel .tab-nav button { padding: 4px 14px; font-size: 13px; }
+.pi-h3-panel label span, .pi-h3-panel .markdown { font-size: 13px; }
 .pi-h3-dual-progress { margin-top: 24px; }
 .pi-h3-dual-progress > .pi-h3-current { top: -38px; z-index: 2; }
 .pi-h3-current .progress { min-width: 8em; }

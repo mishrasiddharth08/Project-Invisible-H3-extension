@@ -25,8 +25,8 @@ class Script(scripts.Script):
         inventory = scan()
         mode = 'i2i' if is_img2img else 't2i'
         with gr.Accordion('H3 · Still images', open=False, visible=forge.selected(), elem_id=f'pi_h3_{mode}_panel', elem_classes=['pi-h3-panel']) as panel:
-            gr.Markdown('Use **Generate** above. Best: ER SDE / Simple / CFG 1 / 50 steps. Width and height: multiples of 32 (≥3 MP recommended). '
-                        + ('Set **Denoising strength to 1**. Describe edits using `<Picture 1>`.' if is_img2img else 'For editing, use **img2img**.'))
+            gr.Markdown('Best: ER SDE / Simple / CFG 1 / 50 steps · multiples of 32 · ≥3 MP recommended'
+                        + (' · Denoise = 1 · use `<Picture 1>` for edits' if is_img2img else ' · editing via img2img'))
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
                 with gr.Tab('Models'):
                     dit = gr.Dropdown(['Auto'] + inventory['dit'], value='Auto', label='Model', elem_id=f'pi_h3_{mode}_dit')
@@ -38,7 +38,7 @@ class Script(scripts.Script):
                     memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Memory mode', elem_id=f'pi_h3_{mode}_memory')
                     keep = gr.Checkbox(False, label='Keep model in memory between runs', elem_id=f'pi_h3_{mode}_keep')
                 with gr.Tab('Files'):
-                    gr.Markdown('Get models from [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main) — place under `models/MiniMax-H3/`. **Generate never downloads.**')
+                    gr.Markdown('[Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main) · place under `models/MiniMax-H3/` · **Generate never downloads**')
                     refresh = gr.Button('Refresh local files', size='sm', elem_id=f'pi_h3_{mode}_refresh')
                     def refresh_files():
                         found = scan()
