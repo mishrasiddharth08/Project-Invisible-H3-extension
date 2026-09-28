@@ -39,7 +39,8 @@ def header(path):
                 not isinstance(shape, list) or any(type(x) is not int or x < 0 for x in shape)):
             raise ValueError('Invalid tensor header: ' + str(path))
         dtype = value.get('dtype')
-        if dtype not in {'BOOL', 'U8', 'I8', 'I16', 'I32', 'I64', 'F16', 'BF16', 'F32', 'F64'}:
+        if dtype not in {'BOOL', 'U8', 'I8', 'I16', 'I32', 'I64', 'F16', 'BF16', 'F32', 'F64',
+                         'F8_E4M3', 'F8_E5M2', 'F4_E2M1', 'U4', 'I4'}:
             raise ValueError('Unsupported tensor dtype ' + repr(dtype) + ': ' + str(path))
         spans.append(tuple(offsets))
     cursor = 0
