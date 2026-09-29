@@ -74,6 +74,11 @@ def options(runner, p):
     filename = getattr(item, 'filename', '')
     if not getattr(item, '_pi_h3', False) and classify(filename) == 'dit':
         result['dit'] = filename
+    # Native "VAE / Text Encoder" multi-dropdown wins over the hidden extension selectors.
+    for module in getattr(shared.opts, 'forge_additional_modules', []) or []:
+        role = classify(str(module))
+        if role in ('clip', 'vae'):
+            result[role] = str(module)
     return result
 
 
