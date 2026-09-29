@@ -25,18 +25,21 @@ class Script(scripts.Script):
         inventory = scan()
         mode = 'i2i' if is_img2img else 't2i'
         refs: list = []
+        # Preset + Autolink resolve checkpoint/TE/VAE; LoRA works via <lora:name:strength>
+        # prompt tags. All four stay as hidden components to preserve the script_args contract.
+        dit = gr.Dropdown(['Auto'] + inventory['dit'], value='Auto', label='H3 checkpoint', visible=False, elem_id=f'pi_h3_{mode}_dit')
+        clip = gr.Dropdown(['Auto'] + inventory['clip'], value='Auto', label='H3 text encoder', visible=False, elem_id=f'pi_h3_{mode}_clip')
+        vae = gr.Dropdown(['Auto'] + inventory['vae'], value='Auto', label='H3 VAE', visible=False, elem_id=f'pi_h3_{mode}_vae')
+        lora = gr.Dropdown(['(none)'] + inventory['lora'], value='(none)', label='H3 LoRA', visible=False, elem_id=f'pi_h3_{mode}_lora')
+        strength = gr.Slider(-2, 2, value=0.38, step=0.01, label='LoRA strength', visible=False, elem_id=f'pi_h3_{mode}_strength')
+        def refresh_files():
+            found = scan()
+            return [gr.update(choices=['Auto']+found[k], value='Auto') for k in ('dit','clip','vae')] + [gr.update(choices=['(none)']+found['lora'], value='(none)')]
         with gr.Accordion('H3 · Still images', open=False, visible=forge.selected(), elem_id=f'pi_h3_{mode}_panel', elem_classes=['pi-h3-panel']) as panel:
             gr.Markdown('Best: ER SDE / Simple / CFG 1 / 50 steps · multiples of 32 · ≥3 MP recommended'
-                        + (' · Denoise = 1 · use `<Picture 1>` for edits' if is_img2img else ' · editing via img2img'))
+                        + (' · Denoise = 1 · use `<Picture 1>` for edits' if is_img2img else ' · editing via img2img')
+                        + ' · LoRA via `<lora:name:strength>`')
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
-                with gr.Tab('Models'):
-                    with gr.Row():
-                        dit = gr.Dropdown(['Auto'] + inventory['dit'], value='Auto', label='Model', elem_id=f'pi_h3_{mode}_dit', scale=2)
-                        vae = gr.Dropdown(['Auto'] + inventory['vae'], value='Auto', label='VAE', elem_id=f'pi_h3_{mode}_vae', scale=1)
-                    clip = gr.Dropdown(['Auto'] + inventory['clip'], value='Auto', label='Text encoder', elem_id=f'pi_h3_{mode}_clip')
-                    with gr.Row():
-                        lora = gr.Dropdown(['(none)'] + inventory['lora'], value='(none)', label='LoRA (optional)', elem_id=f'pi_h3_{mode}_lora', scale=2)
-                        strength = gr.Slider(-2, 2, value=0.38, step=0.01, label='Strength', elem_id=f'pi_h3_{mode}_strength', scale=1)
                 with gr.Tab('Memory'):
                     with gr.Row():
                         memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Memory mode', elem_id=f'pi_h3_{mode}_memory')
@@ -44,17 +47,13 @@ class Script(scripts.Script):
                     drift = gr.Checkbox(is_img2img, label='Pixel-drift fix: realign edits to the source image', elem_id=f'pi_h3_{mode}_drift')
                 with gr.Tab('Files'):
                     gr.Markdown('[Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main) · place under `models/MiniMax-H3/` · **Generate never downloads**')
-                    refresh = gr.Button('Refresh local files', size='sm', elem_id=f'pi_h3_{mode}_refresh')
-                    def refresh_files():
-                        found = scan()
-                        return [gr.update(choices=['Auto']+found[k], value='Auto') for k in ('dit','clip','vae')] + [gr.update(choices=['(none)']+found['lora'], value='(none)')]
-                    refresh.click(refresh_files, outputs=[dit, clip, vae, lora])
                     with gr.Row():
-                        files = gr.CheckboxGroup(list(FILES), value=[], label='Automatic download (large files)', elem_id=f'pi_h3_{mode}_download_files')
-                    with gr.Row():
-                        consent = gr.Checkbox(False, label='I approve downloading and have reviewed the model license', elem_id=f'pi_h3_{mode}_download_consent')
-                        button = gr.Button('Download selected', elem_id=f'pi_h3_{mode}_download')
+                        refresh = gr.Button('Refresh local files', size='sm', elem_id=f'pi_h3_{mode}_refresh')
+                        button = gr.Button('Download selected', size='sm', elem_id=f'pi_h3_{mode}_download')
+                    files = gr.CheckboxGroup(list(FILES), value=[], label='Automatic download (large files)', elem_id=f'pi_h3_{mode}_download_files')
+                    consent = gr.Checkbox(False, label='I approve downloading and have reviewed the model license', elem_id=f'pi_h3_{mode}_download_consent')
                     status = gr.Textbox(label='Download status', interactive=False, elem_id=f'pi_h3_{mode}_download_status')
+                    refresh.click(refresh_files, outputs=[dit, clip, vae, lora])
                     button.click(download, inputs=[files, consent], outputs=[status])
                 if is_img2img:
                     with gr.Tab('References'):
