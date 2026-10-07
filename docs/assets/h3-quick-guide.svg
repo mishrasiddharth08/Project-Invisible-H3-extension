@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+<title id="title">H3 quick guide: one preset, still images and video</title>
+<desc id="desc">Select H3, choose Still image or Video, then Generate. Image defaults are ER SDE, Simple, 50 steps, CFG 1 and 1536 square. Video defaults are Res Multistep, Simple, 20 steps, CFG 1, 832 by 480 and 124 frames at 24 FPS. 234 automated tests and 20 sampler checks passed; some full-model formats remain untested.</desc>
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101919"/><stop offset="1" stop-color="#19342c"/></linearGradient></defs>
+<style>text{font-family:Arial,sans-serif}.muted{fill:#b9cdc5}.white{fill:#f7faf8}.green{fill:#a9ebc7}.gold{fill:#f0d39b}.title{font-size:28px;font-weight:700}.body{font-size:23px}.small{font-size:18px}</style>
+<rect width="1280" height="760" rx="28" fill="url(#bg)"/>
+<text x="56" y="54" class="green small" letter-spacing="3">PROJECT INVISIBLE / FORGE NEO</text>
+<text x="56" y="116" class="white" font-size="52" font-weight="700">One H3 preset. Two outputs.</text>
+<text x="56" y="158" class="muted body">Select H3 → choose Output → Generate</text>
+<rect x="56" y="196" width="558" height="360" rx="20" fill="#213e32" stroke="#78bf97"/>
+<rect x="638" y="196" width="586" height="360" rx="20" fill="#3a3326" stroke="#c9aa70"/>
+<text x="86" y="245" class="green title">STILL IMAGE</text>
+<text x="86" y="282" class="muted small">Photographs and experimental reference editing</text>
+<text x="86" y="331" class="white body">ER SDE · Simple · 50 steps · CFG 1</text>
+<text x="86" y="374" class="white body">1536 × 1536 starting resolution</text>
+<text x="86" y="421" class="muted body">H3 model + H3 encoder + video VAE</text>
+<text x="86" y="467" class="muted small">NVFP4-AWQ encoder tested in the still worker</text>
+<text x="86" y="509" class="green small">Use img2img for editing; denoise = 1</text>
+<text x="668" y="245" class="gold title">VIDEO</text>
+<text x="668" y="282" class="muted small">Text, first/last frames and optional exported audio</text>
+<text x="668" y="331" class="white body">Res Multistep · Simple · 20 steps · CFG 1</text>
+<text x="668" y="374" class="white body">832 × 480 · 124 frames · 24 FPS</text>
+<text x="668" y="421" class="muted body">Compatible encoder + video VAE + audio VAE</text>
+<text x="668" y="467" class="muted small">Automatic INT4 preference; both VAEs required</text>
+<text x="668" y="509" class="gold small">124 frames = 5.17 seconds</text>
+<rect x="56" y="586" width="1168" height="65" rx="14" fill="#263e36"/>
+<text x="640" y="627" text-anchor="middle" class="white body">234 automated tests · 20 sampler checks · editing · audio · Stop/recovery</text>
+<text x="56" y="692" class="muted small">Functional verification, not a quality or speed benchmark. GGUF, W4A8, Ref2VA and FastH3 await full-model checks.</text>
+<text x="56" y="728" class="green small">Normal Forge Generate / Stop / gallery · Generate never downloads model weights</text>
+</svg>

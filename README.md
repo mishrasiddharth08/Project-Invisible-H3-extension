@@ -5,14 +5,36 @@ Select **H3** under **UI Preset**, then use the normal **Generate** button.
 
 [Project page](https://mishrasiddharth08.github.io/Project-Invisible-H3-extension/) · [Test results](VALIDATION.md) · [Quantization support](QUANTIZATION.md)
 
+## H3 quick guide
+
+![H3 quick guide: one preset, Still image or Video](docs/assets/h3-quick-guide.png)
+
+## New Forge Neo UI
+
+Select **H3** once in **UI Preset**. Open the **H3** panel and choose **Still image** or **Video**. The switch selects the matching components and defaults, then you use the usual **Generate** and **Stop** buttons.
+
+### One H3 preset
+
+![Actual Forge Neo preset menu with one H3 entry](docs/assets/ui-single-h3-preset.png)
+
+### Still image
+
+![Actual Still image controls in Forge Neo](docs/assets/ui-unified-still.png)
+
+Use txt2img to create an image, or img2img to edit a reference. Memory and file controls are inside the H3 panel.
+
+### Video
+
+![Actual Video controls with the compatible INT4 encoder](docs/assets/ui-unified-video.png)
+
+Video starts at **832 × 480**, **124 frames / 24 FPS**, **20 steps**, **Res Multistep / Simple**, and **CFG 1**. Its audio controls are in the **MiniMax H3** accordion. Both the video and audio VAEs are required, including for silent export.
+
+<details>
+<summary>How the two output routes work</summary>
+
 ![Unified H3 routing](docs/assets/unified-h3-flow.svg)
 
-![One H3 preset in live Forge Neo](docs/assets/ui-single-h3-preset.png)
-
-![Live Still image controls](docs/assets/ui-unified-still.png)
-
-![Live Video controls](docs/assets/ui-unified-video.png)
-
+</details>
 
 ## Unified H3 preset
 
@@ -81,14 +103,14 @@ Manual downloading is recommended. Obtain files from
 [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main).
 Read the model's license before downloading or using it.
 
-| Required component | Recommended example |
-| --- | --- |
-| H3 model | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` |
-| H3 encoder | `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` |
-| H3 **video** VAE | `minimax_h3_video_vae_fp16.safetensors` or its `int8_convrot` version |
+| Component | Still image | Video |
+| --- | --- | --- |
+| H3 diffusion model | FL2VA INT8 ConvRot tested | FL2VA INT8 ConvRot tested |
+| H3 Qwen3-VL-32B encoder | NVFP4-AWQ tested in the worker | INT4 ConvRot tested; compatible INT8/BF16 supported |
+| H3 video VAE | Required; FP16 tested | Required; FP16 tested |
+| H3 audio VAE | Not used by the still worker | Required; FP32 tested, even for silent export |
 
-The audio VAE and separate single-frame VAE are **not** used for stills.
-The three recommended quantized files total approximately 37 GiB.
+The still worker does not use a separate single-frame VAE. File size and memory needs depend on the chosen formats. See [quantization coverage](QUANTIZATION.md) for tested and untested combinations.
 
 Existing folders are scanned recursively:
 
@@ -104,8 +126,8 @@ check component compatibility; the filename alone is not proof. For other
 locations, add absolute directories to `model_roots` in `config.json`.
 Click **Refresh local files** after adding files.
 
-Optional downloads: open **Models → Optional automatic download**, select the
-exact files, tick approval and click **Download selected models**. Files are
+Optional downloads: open **H3 → Files**, select the
+exact files, tick approval and click **Download selected**. Files are
 verified against pinned upstream SHA256 hashes. Existing complete files are
 reused. **Generate never downloads weights or tokenizers.**
 
@@ -194,7 +216,7 @@ models and generated images are separate and remain available.
 ## Troubleshooting
 
 * **No H3 preset:** restart Forge fully; check the terminal for `[PI-H3]` errors.
-* **Missing model:** open Models, verify all three paths, then Refresh local files.
+* **Missing model:** open **H3 → Files** and click **Refresh local files**. Check the checkpoint and VAE / Text Encoder selectors.
 * **Wrong component:** select the H3 Qwen3-VL-32B encoder and H3 video VAE.
 * **Out of memory:** reduce image dimensions, use lowvram and close other GPU jobs.
 * **Stale browser controls:** refresh the browser after restarting Forge.
