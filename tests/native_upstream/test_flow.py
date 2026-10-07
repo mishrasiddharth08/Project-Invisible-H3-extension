@@ -133,6 +133,7 @@ class FlowTests(unittest.TestCase):
         dit = tiny_dit(17)
         engine.forge_objects = types.SimpleNamespace(
             vae=types.SimpleNamespace(patcher=None, device="cpu", vae_dtype=torch.float32,
+                                      memory_used_decode=lambda shape, dtype: 0,
                                       first_stage_model=video_vae.requires_grad_(False)),
             unet=types.SimpleNamespace(model=types.SimpleNamespace(
                 diffusion_model=dit, predictor=types.SimpleNamespace(percent_to_sigma=lambda percent: 1.0 - percent))),

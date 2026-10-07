@@ -474,7 +474,8 @@ class MiniMaxH3VideoVAE(nn.Module):
     def _decode_tile_row(self, z_row, x_idx, x_len):
         # a few tiles per decoder call (~7%); each extra tile holds ~100 MB of activations
         free = kernels.free_memory(z_row.device)
-        batch = int(max(1, min(4, free // (128 * 2**20 * z_row.shape[0]))))
+        from pi_h3.memory_policy import active_tile_limit
+        batch = int(max(1, min(active_tile_limit(), free // (128 * 2**20 * z_row.shape[0]))))
         slices = [z_row[..., j_pos // self.vae_ratio:(j_pos + j_len) // self.vae_ratio] for j_pos, j_len in zip(x_idx, x_len)]
         for k in range(0, len(slices), batch):
             group = slices[k:k + batch]
@@ -507,7 +508,9 @@ class MiniMaxH3VideoVAE(nn.Module):
                 if j < len(x_idx) - 1:
                     tile = tile[..., :, :-x_overlap[j]]
                 if canvas is None:
-                    canvas = torch.empty(*tile.shape[:-2], height, width, dtype=tile.dtype, device=tile.device)
+                    from pi_h3.memory_policy import active_tile_limit
+                    canvas_device = 'cpu' if active_tile_limit() <= 2 else tile.device
+                    canvas = torch.empty(*tile.shape[:-2], height, width, dtype=tile.dtype, device=canvas_device)
                 if i < len(y_idx) - 1:
                     if new_strip is None:
                         new_strip = torch.empty(*tile.shape[:-2], y_overlap[i], width, dtype=tile.dtype, device=tile.device)

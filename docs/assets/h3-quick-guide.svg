@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
 <title id="title">H3 quick guide: one preset, still images and video</title>
-<desc id="desc">Select H3, choose Still image or Video, then Generate. Image defaults are ER SDE, Simple, 50 steps, CFG 1 and 1536 square. Video defaults are Res Multistep, Simple, 20 steps, CFG 1, 1152 by 768 and 124 frames at 24 FPS. 235 automated tests and 20 sampler checks passed; some full-model formats remain untested.</desc>
+<desc id="desc">Select H3, choose Still image or Video, then Generate. Image defaults are ER SDE, Simple, 50 steps, CFG 1 and 1536 square. Video defaults are Res Multistep, Simple, 20 steps, CFG 1, 1152 by 768 and 124 frames at 24 FPS. 245 automated tests and 20 sampler checks passed; some full-model formats remain untested.</desc>
 <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101919"/><stop offset="1" stop-color="#19342c"/></linearGradient></defs>
 <style>text{font-family:Arial,sans-serif}.muted{fill:#b9cdc5}.white{fill:#f7faf8}.green{fill:#a9ebc7}.gold{fill:#f0d39b}.title{font-size:28px;font-weight:700}.body{font-size:23px}.small{font-size:18px}</style>
 <rect width="1280" height="760" rx="28" fill="url(#bg)"/>
@@ -24,7 +24,7 @@
 <text x="668" y="467" class="muted small">Automatic INT4 preference; both VAEs required</text>
 <text x="668" y="509" class="gold small">124 frames = 5.17 seconds</text>
 <rect x="56" y="586" width="1168" height="65" rx="14" fill="#263e36"/>
-<text x="640" y="627" text-anchor="middle" class="white body">235 automated tests · 20 sampler checks · editing · audio · Stop/recovery</text>
+<text x="640" y="627" text-anchor="middle" class="white body">245 automated tests · 20 sampler checks · editing · audio · Stop/recovery</text>
 <text x="56" y="692" class="muted small">Functional verification, not a quality or speed benchmark. GGUF, W4A8, Ref2VA and FastH3 await full-model checks.</text>
 <text x="56" y="728" class="green small">Normal Forge Generate / Stop / gallery · Generate never downloads model weights</text>
 </svg>

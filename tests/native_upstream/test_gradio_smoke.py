@@ -29,7 +29,8 @@ class GradioSmoke(unittest.TestCase):
                           gr.Slider(1, 24, value=1, elem_id=f"{tab}_cfg_scale"),
                           gr.Slider(1, 150, value=20, elem_id=f"{tab}_steps"),
                           gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_width"),
-                          gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_height")]
+                          gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_height"),
+                          gr.Slider(1, 24, value=3.0, elem_id=f"{tab}_distilled_cfg_scale")]
                 for component in native:
                     ui.capture(component)
                 ui.capture(gr.Radio(["Still image", "Video"], value="Still image", elem_id=f"{tab}_h3_output"))
@@ -97,7 +98,8 @@ class GradioSmoke(unittest.TestCase):
                                         gr.Slider(1, 24, value=7, elem_id=f"{tab}_cfg_scale"),
                                         gr.Slider(1, 150, value=30, elem_id=f"{tab}_steps"),
                                         gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_width"),
-                                        gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_height")]
+                                        gr.Slider(64, 2048, value=1024, elem_id=f"{tab}_height"),
+                          gr.Slider(1, 24, value=3.0, elem_id=f"{tab}_distilled_cfg_scale")]
                         for component in panel_native:
                             ui.capture(component)
                         native.append(panel_native)
@@ -107,23 +109,25 @@ class GradioSmoke(unittest.TestCase):
                 self.assertTrue(demo.config["dependencies"])
                 fn = next(f.fn for f in demo.fns.values() if getattr(f.fn, "__name__", "") == "update")
                 enter = fn("Community", "Video", [p.name for p in components], {"active": False},
-                           2, 1, "DPM++ 2M", "Automatic", 7, 30, 1024, 1024, "H3 Video")
+                           2, 1, "DPM++ 2M", "Automatic", 7, 30, 1024, 1024, 3.0, "H3 Video")
                 self.assertTrue(enter[0]["visible"])
+                self.assertEqual(enter[15]["value"], 12.0)
                 self.assertEqual((enter[7]["label"], enter[7]["value"], enter[7]["step"]), ("Frames", 124, 17))
                 still = fn("Community", "Still image", [p.name for p in components], enter[6],
-                           124, 1, "Euler", "Simple", 1, 20, 832, 480, "H3 Video")
+                           124, 1, "Euler", "Simple", 1, 20, 1024, 576, 12.0, "H3 Video")
                 self.assertFalse(still[1]["visible"])
                 # the audio shift belongs to the sound: hidden with it for Still image
                 self.assertTrue(enter[2]["visible"])
                 self.assertFalse(still[2]["visible"])
                 self.assertFalse(still[7]["visible"])
                 leave = fn("Regular", "Video", [], still[6], 124, 1, "Euler", "Simple", 1,
-                           20, 832, 480, "H3 Video")
+                           20, 1024, 576, 12.0, "H3 Video")
                 self.assertEqual(leave[7]["value"], 2)
                 self.assertEqual(leave[9]["value"], "DPM++ 2M")
+                self.assertEqual(leave[15]["value"], 3.0)
                 self.assertFalse(leave[0]["visible"])
                 enter_wan = fn("Community", "Video", [p.name for p in components], {"active": False},
-                               129, 1, "Euler", "Simple", 1, 20, 832, 480, "wan")
+                               129, 1, "Euler", "Simple", 1, 20, 1024, 576, 3.0, "wan")
                 self.assertFalse(enter_wan[0]["visible"])
                 # the UI preset stays free: switching it is how the user leaves H3 Video.
                 self.assertNotIn("interactive", enter_wan[-1])

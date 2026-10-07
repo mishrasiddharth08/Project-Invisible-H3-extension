@@ -221,13 +221,13 @@ class UiReview(TestCase):
         checkpoint, modules, values = native_ui.output_selection('Still image')
         self.assertEqual(checkpoint, forge.LABEL)
         self.assertEqual(modules, [])
-        self.assertEqual(values, (1, 1, 'ER SDE', 'Simple', 1.0, 50, 1536, 1536))
+        self.assertEqual(values, (1, 1, 'ER SDE', 'Simple', 1.0, 50, 1536, 1536, 12.0))
         with patch('pi_h3.preset.native_defaults', return_value=('H3 physical', [
                     'C:/h3/encoder-int4.safetensors', 'C:/h3/video-vae.safetensors', 'C:/h3/audio-vae.safetensors'])):
             checkpoint, modules, values = native_ui.output_selection('Video')
         self.assertEqual(checkpoint, 'H3 physical')
         self.assertEqual(modules, ['encoder-int4.safetensors', 'video-vae.safetensors', 'audio-vae.safetensors'])
-        self.assertEqual(values, (124, 1, 'Res Multistep', 'Simple', 1.0, 20, 1152, 768))
+        self.assertEqual(values, (124, 1, 'Res Multistep', 'Simple', 1.0, 20, 1152, 768, 12.0))
 
     def test_progress_adds_one_current_bar_and_labels_native_overall(self):
         text = (ROOT / 'javascript' / 'h3-progress.js').read_text(encoding='utf-8')

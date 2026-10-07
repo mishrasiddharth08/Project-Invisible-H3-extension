@@ -46,6 +46,13 @@ class Script(scripts.Script):
                         + ' · LoRA via `<lora:name:strength>`')
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
                 with gr.Tab('Memory'):
+                    from pi_h3.memory_policy import KEY, CHOICES, selected as memory_profile, validate as validate_profile
+                    from modules import shared
+                    profile = gr.Dropdown(list(CHOICES), value=memory_profile(), label='VRAM profile (GB)', elem_id=f'pi_h3_{mode}_vram')
+                    gr.Markdown('Auto detects available GPU memory. Smaller profiles offload more; resolution and frames stay as set. Profiles are soft budgets, not peak limits.')
+                    def set_profile(value):
+                        shared.opts.set(KEY, validate_profile(value))
+                    profile.change(set_profile, inputs=[profile], queue=False, show_progress=False)
                     gr.Markdown('These controls apply to the still-image worker. Native video and GGUF use Forge memory management.')
                     with gr.Row():
                         memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Still worker memory mode', elem_id=f'pi_h3_{mode}_memory')

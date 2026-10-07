@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="540" viewBox="0 0 1280 540" role="img" aria-labelledby="title desc">
+<title id="title">H3 VRAM profiles</title><desc id="desc">Auto or 8, 10, 12, 16, 24 and 32 GiB soft residency profiles. Lower profiles offload more without changing resolution or frames. All six profile smoke paths tested on a 32 GiB GPU. Physical smaller cards unverified.</desc>
+<rect width="1280" height="540" rx="26" fill="#111c2b"/><g font-family="Segoe UI,Arial,sans-serif" fill="#eef6ff">
+<text x="60" y="74" font-size="38" font-weight="700">H3 · VRAM profiles</text>
+<text x="60" y="118" font-size="23" fill="#8ed5ff">Auto · 8 · 10 · 12 · 16 · 24 · 32 GiB</text>
+<text x="60" y="174" font-size="22">H3 → Memory → VRAM profile</text>
+<rect x="60" y="210" width="355" height="145" rx="18" fill="#213850"/><rect x="460" y="210" width="355" height="145" rx="18" fill="#213850"/><rect x="860" y="210" width="355" height="145" rx="18" fill="#213850"/>
+<text x="85" y="254" font-size="27" font-weight="700">8–16 GiB</text><text x="85" y="294" font-size="20">VAE tile batch ≤ 1</text><text x="85" y="330" font-size="20">CPU pixel canvas</text>
+<text x="485" y="254" font-size="27" font-weight="700">24 GiB</text><text x="485" y="294" font-size="20">VAE tile batch ≤ 2</text><text x="485" y="330" font-size="20">CPU pixel canvas</text>
+<text x="885" y="254" font-size="27" font-weight="700">32 GiB</text><text x="885" y="294" font-size="20">VAE tile batch ≤ 4</text><text x="885" y="330" font-size="20">GPU pixel canvas</text>
+<text x="60" y="405" font-size="21">Resolution and frames stay as set · GPU encoding + staged weights</text>
+<text x="60" y="451" font-size="21" fill="#ffd49e">Soft budgets ≠ peak caps. Physical 8–24 GiB cards remain unverified.</text>
+<text x="60" y="496" font-size="19" fill="#a4b4c7">245 CPU tests · six profile smoke paths checked on the same RTX 5090 32 GiB</text>
+</g></svg>

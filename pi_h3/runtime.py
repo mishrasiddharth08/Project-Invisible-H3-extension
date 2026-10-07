@@ -92,6 +92,10 @@ def generate(p, options):
                 mode = options.get('memory', 'auto')
                 if mode not in ('auto', 'lowvram', 'cpu'):
                     raise ValueError('Invalid H3 memory mode.')
+                from .memory_policy import selected as memory_profile
+                profile = memory_profile(p)
+                if profile != 'Auto' and mode != 'cpu':
+                    mode += ':' + profile
                 progress.start(index, p.width, p.height)
                 try:
                     from backend import memory_management

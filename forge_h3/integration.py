@@ -243,6 +243,11 @@ def before_sampling(p, noise):
         set_pending_error(error)
         raise error
     shape = p.sd_model.prepare(request.frames, request.width, request.height, int(p.seeds[0]))
+    from backend import memory_management
+    from .native.phase_memory import release_conditioning
+    released = release_conditioning(p.sd_model, memory_management)
+    if released:
+        print(f'[MiniMax H3] offloaded {released} completed conditioning models before sampling')
     _set_sparse_attention(p)
     # Forge made p.rng for an image latent; the samplers that add noise on the way (ancestral, SDE, res_multistep)
     # draw from it too, so it has to give the packed shape

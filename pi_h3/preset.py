@@ -157,6 +157,13 @@ def install():
         shared.opts.set('forge_preset', PRESET)
         shared.opts.set(OUTPUT_KEY, VIDEO_OUTPUT)
 
+    from .memory_policy import KEY, CHOICES
+    if KEY not in shared.opts.data_labels:
+        import gradio as gr
+        shared.opts.add_option(KEY, shared.OptionInfo(
+            'Auto', 'H3 VRAM profile (GiB; soft residency budget)', component=gr.Dropdown,
+            component_args={'choices': list(CHOICES)}, section=('forge_h3', 'MiniMax H3')))
+
     original = presets.PresetArch.choices
     if not getattr(original, '_pi_h3', False):
         def choices(*args, **kwargs):

@@ -27,7 +27,7 @@ class NativeRoutingTests(TestCase):
             OUTPUT_KEY: VIDEO_OUTPUT})
         original = Mock(return_value='native')
         original._pi_h3_process = False
-        with patch.dict('sys.modules', {'modules': modules}), patch.object(
+        with patch('pi_h3.memory_policy.gpu_memory', return_value=None), patch.dict('sys.modules', {'modules': modules}), patch.object(
                 forge, '_cancel'), patch.object(
                 preset, 'native_defaults', return_value=('H3 physical', ['clip', 'video', 'audio'])):
             wrapped = forge._wrap_process(original)

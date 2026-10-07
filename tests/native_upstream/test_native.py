@@ -299,6 +299,22 @@ class VaeTests(unittest.TestCase):
                 self.assertGreaterEqual(float(out.min()), 0.0)
                 self.assertLessEqual(float(out.max()), 1.0)
 
+    def test_small_profile_tile_batch_and_canvas_preserve_values(self):
+        from unittest.mock import patch
+        from forge_h3.native.video_vae import MiniMaxH3VideoVAE
+        model = MiniMaxH3VideoVAE(ch=32, num_layers=1).requires_grad_(False)
+        # Deterministic spatial decoder isolates overlap/canvas math across batch sizes.
+        def decode(z):
+            return z[:, :3].repeat_interleave(16, -2).repeat_interleave(16, -1)
+        z = torch.randn(1, 24, 1, 20, 24)
+        with torch.inference_mode(), patch.object(model, '_decode_pixels', side_effect=decode):
+            with patch('pi_h3.memory_policy.active_tile_limit', return_value=4):
+                reference = model.tiled_decode(z)
+            for cap in (1, 2):
+                with patch('pi_h3.memory_policy.active_tile_limit', return_value=cap):
+                    actual = model.tiled_decode(z)
+                torch.testing.assert_close(actual, reference, rtol=0, atol=0)
+
     def test_audio_one_second_is_forty_latents(self):
         from forge_h3.native.audio_vae import MiniMaxH3AudioVAE
         torch.manual_seed(0)

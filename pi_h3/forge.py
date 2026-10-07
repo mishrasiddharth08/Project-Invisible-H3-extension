@@ -81,6 +81,7 @@ def _normalize_request(p, runner=None):
         overrides['forge_preset'] = PRESET
         overrides.setdefault(OUTPUT_KEY, VIDEO_OUTPUT)
     p.override_settings = overrides
+    p._pi_h3_native_memory = effective_preset(p) == PRESET
     if effective_preset(p) == PRESET and output_mode(p, runner) == VIDEO_OUTPUT:
         from . import preset
         checkpoint, modules = preset.native_defaults()
@@ -228,7 +229,9 @@ def _wrap_process(original):
         # global dropdown first. Mark the H3 run cancelled before closing its
         # worker so it exits as a normal model switch, not a worker crash.
         _cancel('ordinary process_images request')
-        return original(p, *args, **kwargs)
+        from .memory_policy import native_scope
+        with native_scope(p):
+            return original(p, *args, **kwargs)
     process._pi_h3_process = True
     process._pi_h3_original = original
     return process

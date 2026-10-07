@@ -41,7 +41,9 @@ def engine_modules():
     """Everything forge_h3.native.engine imports from Forge Neo and huggingface_guess."""
     stubs = text_processing()
     memory = module("backend.memory_management", load_model_gpu=lambda patcher: None,
-                    should_use_fp16=lambda device: False, vae_device=lambda: "cpu")
+                    load_models_gpu=lambda models, **kwargs: None,
+                    should_use_fp16=lambda device: False, vae_device=lambda: "cpu",
+                    current_loaded_models=[], free_memory=lambda *args, **kwargs: None)
     base = module("backend.diffusion_engine.base", ForgeDiffusionEngine=type("ForgeDiffusionEngine", (), {}),
                   ForgeObjects=types.SimpleNamespace)
     stubs.update({

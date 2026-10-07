@@ -177,12 +177,15 @@ class MiniMaxH3Engine(ForgeDiffusionEngine):
         audio = audio / generation.audio_scale
 
         video_vae = self.forge_objects.vae
-        memory_management.load_model_gpu(video_vae.patcher)
+        estimate = video_vae.memory_used_decode(video.shape, video_vae.vae_dtype)
+        memory_management.load_models_gpu([video_vae.patcher], memory_required=estimate)
         pixels = video_vae.first_stage_model.decode(video.to(video_vae.device, video_vae.vae_dtype))  # [1, 3, T, H, W] in [0, 1]
-        generation.frames = pixels[0].float().cpu().movedim(1, 0)
+        generation.frames = pixels[0].cpu().float().movedim(1, 0)
+        del pixels
 
         memory_management.load_model_gpu(self.audio_vae.patcher)
         waveform = self.audio_vae.first_stage_model.decode(audio.to(self.audio_vae.device, torch.float32))
-        generation.waveform = waveform[0].float().cpu()
+        generation.waveform = waveform[0].cpu().float()
+        del waveform
 
         return generation.frames[:1].mul(2.0).sub(1.0)

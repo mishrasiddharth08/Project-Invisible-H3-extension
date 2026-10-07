@@ -12,13 +12,13 @@ from .models import ROLE_LABELS, inspect_model
 from .ui_state import frame_view, preset_frame_view
 
 COMPONENTS = {}
-NATIVE_CONTROLS = ("batch_size", "batch_count", "sampling", "scheduler", "cfg_scale", "steps", "width", "height")
+NATIVE_CONTROLS = ("batch_size", "batch_count", "sampling", "scheduler", "cfg_scale", "steps", "width", "height", "distilled_cfg_scale")
 PANELS = []
 logger = logging.getLogger("forge_h3")
 
 OUTPUT_DEFAULTS = {
-    "Still image": (1, 1, "ER SDE", "Simple", 1.0, 50, 1536, 1536),
-    "Video": (DEFAULT_FRAMES, 1, "Res Multistep", "Simple", 1.0, 20, 1152, 768),
+    "Still image": (1, 1, "ER SDE", "Simple", 1.0, 50, 1536, 1536, 12.0),
+    "Video": (DEFAULT_FRAMES, 1, "Res Multistep", "Simple", 1.0, 20, 1152, 768, 12.0),
 }
 
 
@@ -160,6 +160,7 @@ class Panel:
                     updates[5] = gr.update(value=20)
                     updates[6] = gr.update(value=OUTPUT_DEFAULTS["Video"][6])
                     updates[7] = gr.update(value=OUTPUT_DEFAULTS["Video"][7])
+                    updates[8] = gr.update(value=OUTPUT_DEFAULTS["Video"][8])
             elif leaving:
                 updates = [gr.update(**config) for config in saved.get("native", [])]
                 saved.pop("native", None)

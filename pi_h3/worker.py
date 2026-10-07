@@ -30,27 +30,21 @@ def startup():
     import comfy.options
     comfy.options.enable_args_parsing()
     sys.argv += ['--disable-auto-launch', '--disable-dynamic-vram']
-    if mode == 'cpu':
-        sys.argv.append('--cpu')
+    from pi_h3.memory_policy import gpu_memory, worker_flags
+    base_mode, _, profile = mode.partition(':')
+    profile = profile or 'Auto'
+    try:
+        stats = gpu_memory() if base_mode != 'cpu' else None
+    except Exception:
+        stats = None
+        logging.warning('H3 GPU memory detection failed; using conservative offloading.')
+    if stats is None and base_mode != 'cpu':
+        import torch
+        flags = worker_flags(base_mode) if torch.cuda.is_available() else ['--cpu']
     else:
-        # VRAM-tier auto mode: full speed on large cards, staged offload on small ones.
-        tier = mode
-        if tier == 'auto':
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    gigabytes = torch.cuda.get_device_properties(0).total_memory / 2**30
-                    tier = 'full' if gigabytes >= 20 else 'lowvram' if gigabytes >= 10 else 'novram'
-                else:
-                    tier = 'cpu'
-            except Exception:
-                tier = 'full'
-        if tier == 'lowvram':
-            sys.argv.append('--lowvram')
-        elif tier == 'novram':
-            sys.argv.append('--novram')
-        elif tier == 'cpu':
-            sys.argv.append('--cpu')
+        flags = worker_flags(base_mode, *(stats or (None, None)), profile=profile)
+    sys.argv += flags
+    logging.info('H3 worker memory profile %s: %s', profile, ' '.join(flags) or 'normal')
     import comfy.sd
     import comfy.sample
     import comfy.samplers
@@ -242,7 +236,9 @@ class Engine:
                     last_preview = now
                 emit('progress', **data)
             emit('status', text='sampling')
-            with torch.inference_mode():
+            # Offloaded quantized Parameters require normal tensor version counters.
+            # no_grad still disables autograd activation storage.
+            with torch.no_grad():
                 output = comfy.sample.sample(model, noise, request['steps'], request['cfg'], request['sampler'],
                     request['scheduler'], positive, negative, latent, callback=callback,
                     disable_pbar=True, seed=request['seed'])

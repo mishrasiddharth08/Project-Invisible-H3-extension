@@ -283,3 +283,69 @@ It used the INT8 ConvRot DiT and INT4 ConvRot encoder with Forge offloading.
 Speed and memory vary with dimensions, frames, components and adapters.
 The still worker's Memory mode and Keep model controls do not govern native
 video or GGUF; those routes use Forge memory management.
+
+
+## VRAM profiles: 8 / 10 / 12 / 16 / 24 / 32 GiB
+
+Open **H3 > Memory > VRAM profile**. **Auto** is the default; choose a smaller
+profile to favor offloading. Both the native route and the dedicated still
+worker understand these profiles. They are **soft weight-residency budgets,
+not hard GPU peak limits**. Resolution, frames, steps and model precision
+remain exactly as requested. Very large requests can still run out of memory.
+
+| Profile | Native VAE tile batch cap | Memory behavior |
+| --- | --- | --- |
+| 8 / 10 / 12 / 16 | 1 | Partial GPU weights; CPU pixel canvas |
+| 24 | 2 | Partial GPU weights; CPU pixel canvas |
+| 32 | 4 | GPU pixel canvas; larger weight residency |
+| Auto | Follows detected capacity | Detects GPU memory; worker also checks free memory |
+
+The profiles leave approximately 2 GiB of inference/OS headroom and respect
+larger existing Forge reservations. Native H3 restores Forge's prior memory
+settings after each request. Completed conditioning weights are offloaded
+before sampling; video VAE loading now accounts for decoding activations.
+The overlap size, blending order and sampling math are preserved. Auto keeps
+GPU text encoding available: forcing low/no-VRAM mode sent the entire large
+encoder to CPU and was much slower. Explicit Still worker lowvram remains
+available. Detection failures use conservative offloading rather than forcing
+full residency. No Generate-time model download is added.
+
+### Validation limits
+
+All six profiles completed identical 384 x 256, 22-frame, 2-step native
+functional requests on the **same physical RTX 5090 32 GiB card**. These are
+neither quality examples nor physical 8–24 GiB compatibility tests. The first
+8 GiB cold request observed **15,027 MiB total GPU usage**, demonstrating why
+a soft profile is not an 8 GiB hard cap. Subsequent requests reused conditioning
+and kernels; their timings cannot be compared as independent cold benchmarks.
+The exact hardware/quantization combination must still be tested on smaller
+cards. Large system RAM and a fast local drive remain necessary for offloading.
+
+CPU validation: **138 main + 107 native = 245 tests**. Tests include all six
+profile choices, free-memory pressure, invalid/detection-failure handling,
+restoration after exceptions, unchanged dimensions and exact tile/canvas
+values on deterministic tensor fixtures. They do not prove every GPU kernel,
+quantization, LoKr/LoHA/DoRA adapter, or maximum workload fits a smaller card.
+
+![H3 VRAM profiles](docs/assets/h3-vram-guide.svg)
+
+
+### Full quality regression with the 32 GiB profile
+
+The 1152 x 768, 124-frame, 20-step request also passed (HTTP 200). Warm elapsed
+time was **239.30 seconds**. One-second sampling observed a maximum **28,267 MiB
+total GPU use (27.60 GiB)**, including the host; this is not exact allocator peak
+telemetry. Earlier 335.82-second evidence was a cold run, so these timings do
+not establish a speedup. Video and audio decoded without errors.
+
+[View the new full-quality sample](docs/assets/video-memory-profile32.mp4).
+
+
+### Dedicated still-worker regression
+
+The 8 GiB soft profile completed a 384 x 256, 2-step functional image request
+in **56.07 seconds**, using the local INT8 ConvRot DiT, NVFP4-AWQ encoder and
+FP16 VAE on the same physical 32 GiB GPU. This is not physical 8 GiB testing.
+The test exposed a quantized Parameter version-counter error during offload;
+the worker now uses no-grad inference, retaining tensor version counters
+without storing autograd activations. The real request passed after the fix.
