@@ -1,5 +1,5 @@
 Project Invisible H3, 2026.
-Extension integration: GPL-3.0-or-later.
+Combined extension distribution: AGPL-3.0. Original Project Invisible code: GPL-3.0-or-later.
 
 Bundled ComfyUI backend (GPL-3.0):
 https://github.com/comfyanonymous/ComfyUI
@@ -16,3 +16,15 @@ Reference conditioning is adapted from ComfyUI's nodes_minimax_h3.py at
 the revision above. Preview factors come from its MiniMaxH3Video latent format.
 Native preset registration follows the local Project Invisible Qwen extension.
 Model weights are not bundled. Their own upstream licenses apply.
+
+Native H3 backend and video integration, Eduardo Abreu (AGPL-3.0):
+https://github.com/eduardoabreu81/minimax-h3-forge-neo
+Revision 8ec38de8a10bcb924033278dfff64e25fdfc88be (v0.6.0).
+Copied package: forge_h3/. Local bridge: scripts/native_h3.py.
+Upstream license: licenses/EDUARDO-H3-AGPL-3.0.txt.
+Upstream validation is retained as documentation, not local GPU proof.
+
+Design inspiration: AiWithYou / AiKimi Forge Neo
+https://github.com/AiWithYou/aikimi-forge-neo
+Revision 1ebd2454ba424fb08fe666c5e494d8eb189fe935.
+Scoped read-only diagnostics, isolated runtime stages and context-specific controls.

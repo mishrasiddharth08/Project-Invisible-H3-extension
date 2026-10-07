@@ -4,6 +4,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 from pi_h3 import forge, runtime
+from forge_h3 import ui as native_ui
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,19 +68,44 @@ class HookReview(TestCase):
             self.assertEqual(wrapped(p, future=True), 'ordinary')
         original.assert_called_once_with(p, future=True)
 
+    def test_stale_api_defaults_expand_from_built_controls(self):
+        h3 = SimpleNamespace(_pi_h3=True, args_from=3, args_to=5,
+                             controls=[SimpleNamespace(value='memory'), SimpleNamespace(value='Video')])
+        runner = SimpleNamespace(scripts=[SimpleNamespace(args_to=3), h3])
+        original = [0, 'old', 'values']
+        self.assertEqual(forge._current_script_defaults(original, runner),
+                         [0, 'old', 'values', 'memory', 'Video'])
+        self.assertEqual(original, [0, 'old', 'values'])
+
+    def test_api_guard_uses_current_script_snapshot(self):
+        calls = []
+        class Api:
+            def init_script_args(self, request, defaults, selectable, index, runner, **kwargs):
+                calls.append(defaults)
+                return defaults
+        module = SimpleNamespace(Api=Api)
+        h3 = SimpleNamespace(_pi_h3=True, args_from=1, args_to=2,
+                             controls=[SimpleNamespace(value='Video')])
+        runner = SimpleNamespace(scripts=[h3])
+        with patch.dict('sys.modules', {'modules.api.api': module}):
+            forge.install_api_argument_guard()
+            result = Api().init_script_args(None, [0], None, 0, runner)
+        self.assertEqual(result, [0, 'Video'])
+        self.assertEqual(calls, [[0, 'Video']])
+
     def test_h3_wrapper_routes_before_foreign_chain(self):
         foreign_calls = []
         def foreign(*args, **kwargs):
             foreign_calls.append((args, kwargs))
             raise AssertionError('foreign chain must not run')
         p = SimpleNamespace(override_settings={})
-        with patch.object(forge, 'selected', return_value=True), patch.object(
+        with patch.object(forge, '_normalize_request'), patch.object(forge, 'selected', return_value=True), patch.object(
                 forge, 'options', return_value={}), patch.object(runtime, 'generate', return_value='H3'):
             self.assertEqual(forge._wrap_process(foreign)(p), 'H3')
         self.assertEqual(foreign_calls, [])
 
     def test_saved_h3_preset_restores_native_checkpoint(self):
-        opts = SimpleNamespace(forge_preset='H3')
+        opts = SimpleNamespace(forge_preset='H3', pi_h3_output='Still image')
         opts.set = Mock(side_effect=lambda key, value: setattr(opts, key, value))
         sd_models = SimpleNamespace(checkpoints_list={}, checkpoint_aliases={})
         modules = SimpleNamespace(shared=SimpleNamespace(opts=opts), sd_models=sd_models)
@@ -88,6 +114,49 @@ class HookReview(TestCase):
         self.assertEqual(opts.sd_model_checkpoint, forge.LABEL)
         self.assertEqual(opts.forge_checkpoint_H3, forge.LABEL)
         self.assertEqual(opts.forge_additional_modules, [])
+
+    def test_saved_h3_video_restores_physical_checkpoint_and_modules(self):
+        opts = SimpleNamespace(forge_preset='H3', pi_h3_output='Video',
+                               sd_model_checkpoint=forge.LABEL,
+                               forge_additional_modules=[])
+        opts.set = Mock(side_effect=lambda key, value: setattr(opts, key, value))
+        marker = SimpleNamespace(filename='C:/models/h3.safetensors', _pi_h3=True)
+        modules = SimpleNamespace(shared=SimpleNamespace(opts=opts), sd_models=SimpleNamespace(
+            checkpoints_list={forge.LABEL: marker}, checkpoint_aliases={}))
+        native_modules = ['encoder', 'video-vae', 'audio-vae']
+        with patch.dict('sys.modules', {'modules': modules}), patch(
+                'pi_h3.preset.native_defaults', return_value=('H3 physical', native_modules)):
+            forge.restore_saved_selection()
+        self.assertEqual(opts.sd_model_checkpoint, 'H3 physical')
+        self.assertEqual(opts.forge_checkpoint_H3, 'H3 physical')
+        self.assertEqual(opts.forge_additional_modules, native_modules)
+        self.assertEqual(opts.forge_additional_modules_H3, native_modules)
+
+    def test_saved_video_page_load_shows_panel_and_retains_modules(self):
+        native_modules = ['encoder', 'video-vae', 'audio-vae']
+        physical = SimpleNamespace(filename='C:/models/MiniMax-H3-FL2VA.safetensors')
+        opts = SimpleNamespace(forge_preset='H3', pi_h3_output='Video',
+                               sd_model_checkpoint='H3 physical',
+                               forge_additional_modules=native_modules)
+        modules = SimpleNamespace(shared=SimpleNamespace(opts=opts), sd_models=SimpleNamespace(
+            checkpoints_list={'H3 physical': physical}, checkpoint_aliases={}))
+        with patch.dict('sys.modules', {'modules': modules}), patch.object(
+                forge, 'restore_saved_selection'):
+            updates = forge._ui_load_state(False)
+        self.assertTrue(updates[2]['visible'])
+        self.assertEqual(updates[1]['value'], native_modules)
+
+    def test_ordinary_checkpoint_hides_panel_without_clearing_modules(self):
+        ordinary = SimpleNamespace(filename='C:/models/ordinary.safetensors')
+        opts = SimpleNamespace(forge_preset='sd', pi_h3_output='Video',
+                               sd_model_checkpoint='ordinary',
+                               forge_additional_modules=['keep-me'])
+        modules = SimpleNamespace(shared=SimpleNamespace(opts=opts), sd_models=SimpleNamespace(
+            checkpoints_list={'ordinary': ordinary}, checkpoint_aliases={}))
+        with patch.dict('sys.modules', {'modules': modules}), patch.object(forge, '_cancel'):
+            updates = forge._ui_selection_state('ordinary', False)
+        self.assertFalse(updates[0]['visible'])
+        self.assertNotIn('value', updates[1])
 
     def test_callbacks_return_after_forge_clears_them(self):
         callback_map = {key: [] for key in (
@@ -120,7 +189,9 @@ class HookReview(TestCase):
                 forge, 'install_forge_selection'), patch.object(
                 forge, 'install_forge_ui_sync'), patch.object(
                 forge, 'restore_saved_selection'), patch.object(forge, 'register'):
-            modules = SimpleNamespace(processing=SimpleNamespace(process_images=lambda p: p))
+            modules = SimpleNamespace(processing=SimpleNamespace(process_images=lambda p: p),
+                                      sd_models=SimpleNamespace(list_models=lambda: None),
+                                      shared=SimpleNamespace(opts=SimpleNamespace(forge_preset='sd')))
             with patch.dict('sys.modules', {'modules': modules}):
                 forge._ready()
         self.assertEqual(forge._UI_BINDINGS, [])
@@ -137,8 +208,26 @@ class UiReview(TestCase):
         for control in ('dit', 'clip', 'vae', 'lora', 'strength', 'memory', 'keep'):
             self.assertIn(f"pi_h3_{{mode}}_{control}", text)
         self.assertIn("pi_h3_i2i_ref_{i}", text)
+        self.assertIn("elem_id=f'{tab}_h3_output'", text)
+        self.assertIn('value=forge.output_mode()', text)
+        self.assertIn('return [dit, clip, vae, lora, strength, memory, keep, drift, *refs, output]', text)
+        native_text = (ROOT / 'forge_h3' / 'ui.py').read_text(encoding='utf-8')
+        self.assertIn('self.output = gr.State("Video")', native_text)
+        self.assertNotIn('self.output = gr.Radio', native_text)
         forge_text = (ROOT / 'pi_h3' / 'forge.py').read_text(encoding='utf-8')
         self.assertIn('gr.update(value=1.0) if active', forge_text)
+
+    def test_primary_output_has_one_safe_default_set(self):
+        checkpoint, modules, values = native_ui.output_selection('Still image')
+        self.assertEqual(checkpoint, forge.LABEL)
+        self.assertEqual(modules, [])
+        self.assertEqual(values, (1, 1, 'ER SDE', 'Simple', 1.0, 50, 1536, 1536))
+        with patch('pi_h3.preset.native_defaults', return_value=('H3 physical', [
+                    'C:/h3/encoder-int4.safetensors', 'C:/h3/video-vae.safetensors', 'C:/h3/audio-vae.safetensors'])):
+            checkpoint, modules, values = native_ui.output_selection('Video')
+        self.assertEqual(checkpoint, 'H3 physical')
+        self.assertEqual(modules, ['encoder-int4.safetensors', 'video-vae.safetensors', 'audio-vae.safetensors'])
+        self.assertEqual(values, (124, 1, 'Res Multistep', 'Simple', 1.0, 20, 832, 480))
 
     def test_progress_adds_one_current_bar_and_labels_native_overall(self):
         text = (ROOT / 'javascript' / 'h3-progress.js').read_text(encoding='utf-8')

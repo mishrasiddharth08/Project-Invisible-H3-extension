@@ -1,0 +1,201 @@
+--- a/model_autolink/integration.py
++++ b/model_autolink/integration.py
+@@ -258,7 +258,9 @@
+         )
+ 
+     def refresh_model_loading_parameters(*, refresh=True):
+-        if _enabled() and not getattr(_state, "manual_change", False) and not getattr(_state, "checkpoint_change", False):
++        preserve_explicit = refresh and getattr(_state, "explicit_components", False)
++        if (_enabled() and not preserve_explicit and not getattr(_state, "manual_change", False)
++                and not getattr(_state, "checkpoint_change", False)):
+             try:
+                 _apply_for_current(main_entry, persist=True)
+             except ResolutionError as exc:
+@@ -267,7 +269,12 @@
+                 checkpoint = _current_checkpoint_path()
+                 print(f"[Model Autolink] Automatic component selection skipped for "
+                       f"{Path(checkpoint).name if checkpoint else 'unknown checkpoint'}: {exc}")
+-        return original_refresh(refresh=refresh)
++        try:
++            return original_refresh(refresh=refresh)
++        finally:
++            if refresh:
++                _state.explicit_components = False
++                _state.deferred_checkpoint_change = False
+ 
+     def checkpoint_change(ckpt_name: str, preset: str, save=True, refresh=True):
+         if not _enabled():
+@@ -296,9 +303,12 @@
+         print(f"[Model Autolink] Prepared {family} {source} set before checkpoint reload.")
+         _state.checkpoint_change = True
+         try:
+-            return original_checkpoint_change(ckpt_name, preset, save=save, refresh=refresh)
++            changed = original_checkpoint_change(ckpt_name, preset, save=save, refresh=refresh)
+         finally:
+             _state.checkpoint_change = False
++        if changed and preset is None and not save and not refresh:
++            _state.deferred_checkpoint_change = True
++        return changed
+ 
+     def on_preset_change(preset: str):
+         result = original_on_preset_change(preset)
+@@ -386,6 +396,12 @@
+             changed = original_modules_change(module_values, preset, save=save, refresh=refresh)
+         finally:
+             _state.manual_change = False
++        if (preset is None and not save and not refresh
++                and (changed or getattr(_state, "deferred_checkpoint_change", False))):
++            # sysinfo.set_config() applies API/request overrides without an
++            # immediate refresh. Preserve this explicit selection through the
++            # single deferred refresh, without saving it as a user preference.
++            _state.explicit_components = True
+         if checkpoint and requested and save:
+             _resolver.remember(checkpoint, requested, automatic=False)
+             print("[Model Autolink] Pinned manual compatible set: " + ", ".join(Path(x).name for x in requested))
+--- /dev/null
++++ b/tests/test_explicit_request_components.py
+@@ -0,0 +1,144 @@
++import importlib.util
++import sys
++import types
++from pathlib import Path
++from types import SimpleNamespace
++
++
++def load_candidate():
++    root = Path(__file__).resolve().parents[1]
++    package = types.ModuleType("candidate_model_autolink")
++    package.__path__ = [str(root / "model_autolink")]
++    stubs = {
++        "compatibility": {"DEFAULT_QUANT_PRIORITY": {}},
++        "fingerprint": {"quantization": lambda *_: "plain"},
++        "resolver": {"ResolutionError": RuntimeError, "Resolver": object},
++        "smartname": {"smart_rename": lambda *_args, **_kwargs: []},
++    }
++    modules = {"candidate_model_autolink": package}
++    for name, values in stubs.items():
++        module = types.ModuleType(f"candidate_model_autolink.{name}")
++        vars(module).update(values)
++        modules[module.__name__] = module
++    previous = {name: sys.modules.get(name) for name in modules}
++    sys.modules.update(modules)
++    try:
++        spec = importlib.util.spec_from_file_location(
++            "candidate_model_autolink.integration", root / "model_autolink" / "integration.py"
++        )
++        module = importlib.util.module_from_spec(spec)
++        sys.modules[spec.name] = module
++        spec.loader.exec_module(module)
++        return module
++    finally:
++        for name, value in previous.items():
++            if value is None:
++                sys.modules.pop(name, None)
++            else:
++                sys.modules[name] = value
++
++
++def test_api_explicit_components_survive_deferred_refresh(monkeypatch, tmp_path):
++    integration = load_candidate()
++    old = tmp_path / "old.safetensors"
++    h3 = tmp_path / "h3.safetensors"
++    int4 = tmp_path / "h3-int4.safetensors"
++    nvfp4 = tmp_path / "h3-nvfp4.safetensors"
++    vae = tmp_path / "h3-vae.safetensors"
++    for path in (old, h3, int4, nvfp4, vae):
++        path.touch()
++
++    class Opts:
++        def __init__(self):
++            self.data = {
++                "sd_model_checkpoint": str(old),
++                "forge_additional_modules": [str(nvfp4), str(vae)],
++                "forge_preset": "H3 Video",
++                "model_autolink_enabled": True,
++                "model_autolink_smart_rename": False,
++            }
++            self.saved = 0
++
++        def __getattr__(self, name):
++            return self.data.get(name)
++
++        def set(self, name, value, **_kwargs):
++            self.data[name] = value
++
++        def save(self, _filename):
++            self.saved += 1
++
++    opts = Opts()
++    shared = SimpleNamespace(opts=opts, cmd_opts=SimpleNamespace(), config_filename="config.json")
++    infos = {
++        str(old): SimpleNamespace(filename=str(old), name=str(old), short_title=old.name),
++        str(h3): SimpleNamespace(filename=str(h3), name=str(h3), short_title=h3.name),
++    }
++    sd_models = SimpleNamespace(
++        checkpoints_list=infos,
++        get_closet_checkpoint_match=lambda value: infos.get(str(value)),
++    )
++    loading = SimpleNamespace(value=None)
++    module_list = {path.name: str(path) for path in (int4, nvfp4, vae)}
++
++    def refresh(*, refresh=True):
++        if refresh:
++            loading.value = list(opts.forge_additional_modules)
++
++    def checkpoint_change(value, preset, save=True, refresh=True):
++        if opts.sd_model_checkpoint == value:
++            return False
++        opts.set("sd_model_checkpoint", value)
++        main_entry.refresh_model_loading_parameters(refresh=refresh)
++        return True
++
++    def modules_change(values, preset, save=True, refresh=True):
++        selected = sorted(module_list[Path(value).name] for value in values)
++        if selected == opts.forge_additional_modules:
++            return False
++        opts.set("forge_additional_modules", selected)
++        main_entry.refresh_model_loading_parameters(refresh=refresh)
++        return True
++
++    main_entry = SimpleNamespace(
++        module_list=module_list,
++        refresh_model_loading_parameters=refresh,
++        checkpoint_change=checkpoint_change,
++        modules_change=modules_change,
++        refresh_models=lambda: None,
++        make_checkpoint_manager_ui=lambda: None,
++        on_preset_change=lambda preset: None,
++        _load_presets=lambda *args: args,
++    )
++    modules = types.ModuleType("modules")
++    modules.paths_internal = SimpleNamespace(models_path=str(tmp_path))
++    modules.shared = shared
++    modules.sd_models = sd_models
++    modules_forge = types.ModuleType("modules_forge")
++    modules_forge.main_entry = main_entry
++    monkeypatch.setitem(sys.modules, "modules", modules)
++    monkeypatch.setitem(sys.modules, "modules_forge", modules_forge)
++
++    class Resolver:
++        component_folders = []
++        registry = SimpleNamespace(scan_components=lambda *_: None)
++
++        def __init__(self, *_args):
++            pass
++
++        def resolve(self, _checkpoint):
++            return [str(nvfp4), str(vae)], "minimax_h3", "saved"
++
++        def validate(self, _checkpoint, requested):
++            assert str(int4) in requested
++
++    monkeypatch.setattr(integration, "Resolver", Resolver)
++    integration._patch_forge(tmp_path)
++
++    assert main_entry.checkpoint_change(str(h3), None, save=False, refresh=False)
++    assert main_entry.modules_change([int4.name, vae.name], None, save=False, refresh=False)
++    main_entry.refresh_model_loading_parameters()
++
++    assert loading.value == sorted([str(int4), str(vae)])
++    assert str(nvfp4) not in loading.value
++    assert opts.saved == 0

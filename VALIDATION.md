@@ -1,3 +1,60 @@
+# Integration validation
+
+CPU validation of the unified extension: 128 main tests and 106 imported native-backend tests pass, 234 total. Tests cover the single H3 preset, Output precedence, legacy `H3 Video` API normalization, synthetic and physical checkpoint routing, GGUF still routing, native-script argument compatibility, sampler/scheduler choices, dimensions, step/CFG limits, batch controls, seed/prompt lists, LoRA parameters, memory modes, cancellation, frame grids, audio shift, FL2VA/Ref2VA references, compatibility gates and route isolation. Imported flow tests execute toy-size real tensor operations; they are not full-model GPU benchmarks.
+
+A separate Boogu regression suite passed 75 tests after its installed refresh-snapshot fix. It is reported separately because Boogu is not an H3 feature.
+
+## Current native evidence
+
+Forge Neo 2.29.2 on RTX 5090 with 96 GB RAM used the physical FL2VA int8 ConvRot checkpoint and the approved Qwen3-VL-32B INT4 ConvRot encoder. These backend checks preceded the single-preset UI update. All three requests used seed 62026 at 384 × 256:
+
+| Request | Result | Settings | Wall time |
+| --- | --- | --- | --- |
+| Native Still image | HTTP 200, one image | 2 steps, 5-frame native request | 34.74 s |
+| Video with audio | HTTP 200, MP4 written | 4 steps, 22 frames, audio enabled | 21.49 s |
+| Silent video | HTTP 200, MP4 written | 4 steps, 22 frames, audio disabled | 15.02 s |
+
+The recorded generation metadata names `Qwen3-VL-32B-TextEncoder-minimax-h3-int4_convrot--For-MiniMax-H3.safetensors`, so these runs are valid INT4 encoder evidence. The approved file is Merserk/MiniMax-H3-INT4-ConvRot revision `3c167bc916cab6cf3b85b9e3769952757ebb2e5d`, size 14,952,506,624 bytes, SHA256 `4389571ab5db4180bcae33d13d07855319530f60a85ab0f1061379401a8ef66c`.
+
+These small requests prove functional routing, generation and export. They do not establish production quality or representative speed.
+
+## Unified live evidence
+
+The live UI contract reported exactly one `H3` preset and both `Still image` and `Video` choices for txt2img and img2img. The unified API used `forge_preset="H3"` with `pi_h3_output="Video"` and the same INT4 encoder:
+
+| Request | Result | Wall time |
+| --- | --- | --- |
+| Video with audio | HTTP 200, 22 frames, audio enabled | 46.17 s |
+| Silent video | HTTP 200, 22 frames, audio disabled | 16.38 s |
+| First-frame conditioning | HTTP 200, first-frame metadata present | 31.53 s |
+| Last-frame conditioning | HTTP 200, last-frame metadata present | 22.97 s |
+| First + last frames | HTTP 200, both metadata flags present | 22.89 s |
+
+The dedicated still worker also passed all 20 tested combinations of ER SDE, Euler, Heun, DPM++ 2M and Res Multistep with Simple, Normal, Beta and Karras schedules. The first cold ER SDE / Simple request took 60.2 seconds; warm tiny-setting requests took 2.08–3.88 seconds. These timings are functional evidence only.
+
+## Still editing evidence
+
+Unified Still image editing returned HTTP 200 with one 512 × 768 image in 66.34 seconds using ER SDE / Simple, 12 steps, seed 62026 and one reference. The prompt requested the same adult woman with a blue-sea background and natural skin texture. Visual inspection found visible pores and the requested sea background. This is one visual check, not a general identity or fidelity guarantee.
+
+## Stop and recovery evidence
+
+The prior `NoneType` Stop error was fixed with an H3-only cancellation guard. Final live results recorded:
+
+| Request | Result | Wall time |
+| --- | --- | --- |
+| Early Stop | HTTP 200, zero images | 11.36 s |
+| Recovery after early Stop | HTTP 200, one image | 20.82 s |
+| Stop during sampling | HTTP 200, zero images | 8.99 s |
+| Recovery after sampling Stop | HTTP 200, one image | 12.91 s |
+
+The saved `H3 Video` setting also migrated to the single `H3` preset, and an API Video request sent before normal UI interaction returned HTTP 200 with one image in 40.89 seconds. An earlier worker-start interruption was not reproduced after restart; its exact cause remains unknown.
+
+Fixed during integration: stale conditioning after component changes; incorrect sampler metadata after fallback; worker script relative import; nonfinite denoise; fractional batch truncation; invalid reference objects; nonfinite/out-of-range LoRA controls; native frame/audio/mode validation; redundant component-header scans; and AutoLink’s stale component list after automatic renaming. Text encoder and VAE weights now offload before still sampling while preserving DiT residency and conditioning cache.
+
+Full-model Ref2VA, GGUF, W4A8 and FastH3 runs require their matching checkpoint files and remain unverified locally. CPU coverage and upstream reports do not substitute for those runs. No universal quantization, hardware, image fidelity or speed claim is made.
+
+## Prior validation
+
 # Validation — September 28, 2026
 
 Tested on Forge Neo 2.29.1, RTX 5090 (32 GB), 96 GB RAM, using the
@@ -54,8 +111,9 @@ result is not a guaranteed speed. Investigate load/first-step latency on an
 idle GPU before claiming consistent high speed. Separate GPU contexts were
 present during the later tests, but their effect was not established.
 
-See QUANTIZATION.md: integer INT4 detection is covered; real integer INT4
-H3 inference and GGUF support are not established.
+At the time of this older validation, real integer INT4 H3 inference and the
+new native GGUF route had not yet been established. See the current sections
+above and `QUANTIZATION.md` for the updated evidence and route boundaries.
 
 FL2VA reference editing is experimental; Ref2VA is the trained reference model.
 The 3.15 MP reference edit was stopped after 393 seconds of conditioning;
@@ -66,3 +124,7 @@ in modules/launch_utils.py was preserved.
 
 Detailed logs and generated samples are in the sibling development workspace
 `project-invisible-ideogram-4/work/h3-research`.
+
+## Final UI and startup regressions
+
+The primary Output control stays visible in Video mode, remains open while switching, and saves the selected mode before component callbacks run. H3 repairs incompatible automatic video component sets while preserving explicit requests for validation. Concurrent checkpoint refreshes are serialized while H3 is selected; the LLaDA, SenseNova and Boogu registry readers received small snapshot fixes locally. Their portable patches are included under startup-fixes. Final UI captures use a CPU-only isolated Forge instance; earlier generation evidence used the RTX 5090.

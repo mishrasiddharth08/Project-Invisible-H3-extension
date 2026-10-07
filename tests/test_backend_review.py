@@ -126,6 +126,13 @@ class TransportReview(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'unknown response'):
             self.worker({'type': 'mystery'}).receive(lambda: False, timeout=1)
 
+    def test_worker_exit_reports_code_and_stderr(self):
+        worker = self.worker({'type': 'exit'})
+        worker.process = types.SimpleNamespace(poll=lambda: 17)
+        worker.errors = ['backend import failed']
+        with self.assertRaisesRegex(RuntimeError, r'exit code 17[\s\S]*backend import failed'):
+            worker.receive(lambda: False, timeout=1)
+
     def test_cancelled_request_is_never_written(self):
         worker = object.__new__(Worker)
         worker.process = types.SimpleNamespace(stdin=types.SimpleNamespace(write=lambda value: self.fail('write')))

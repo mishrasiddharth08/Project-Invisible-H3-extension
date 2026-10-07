@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Unified H3 output routing infographic</title>
+  <desc id="desc">One H3 preset routes Still image to the dedicated worker and Video to the native Forge backend. Physical GGUF still requests use the native backend.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101719"/><stop offset="1" stop-color="#182622"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-opacity=".28"/></filter>
+  </defs>
+  <rect width="1200" height="620" rx="28" fill="url(#bg)"/>
+  <text x="60" y="70" fill="#f0eee8" font-family="system-ui,sans-serif" font-size="34" font-weight="700">One H3 preset. Two outputs.</text>
+  <text x="60" y="108" fill="#a9bbb5" font-family="system-ui,sans-serif" font-size="18">The Output selector chooses the correct local engine and components.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="60" y="158" width="300" height="150" rx="18" fill="#22322d" stroke="#77b58f" stroke-width="2"/>
+    <text x="90" y="204" fill="#9fe0b9" font-family="system-ui,sans-serif" font-size="16" font-weight="700">UI PRESET</text>
+    <text x="90" y="260" fill="#fff" font-family="system-ui,sans-serif" font-size="48" font-weight="750">H3</text>
+  </g>
+
+  <path d="M360 233H470" stroke="#77b58f" stroke-width="5"/><path d="m470 233-18-12v24z" fill="#77b58f"/>
+  <g filter="url(#shadow)">
+    <rect x="488" y="142" width="260" height="182" rx="18" fill="#262d2b" stroke="#d2ba78" stroke-width="2"/>
+    <text x="518" y="187" fill="#d8c887" font-family="system-ui,sans-serif" font-size="16" font-weight="700">OUTPUT</text>
+    <rect x="518" y="211" width="200" height="42" rx="21" fill="#afe0bf"/>
+    <circle cx="542" cy="232" r="8" fill="#173024"/>
+    <text x="561" y="239" fill="#173024" font-family="system-ui,sans-serif" font-size="18" font-weight="700">Still image</text>
+    <circle cx="542" cy="284" r="9" fill="none" stroke="#aab7b1" stroke-width="2"/>
+    <text x="561" y="291" fill="#e4e6e2" font-family="system-ui,sans-serif" font-size="18">Video</text>
+  </g>
+
+  <path d="M748 216H840" stroke="#77b58f" stroke-width="5"/><path d="m840 216-18-12v24z" fill="#77b58f"/>
+  <path d="M748 277H790Q815 277 815 324V402H840" fill="none" stroke="#d2ba78" stroke-width="5"/><path d="m840 402-18-12v24z" fill="#d2ba78"/>
+
+  <g filter="url(#shadow)">
+    <rect x="858" y="142" width="282" height="150" rx="18" fill="#21362d" stroke="#77b58f" stroke-width="2"/>
+    <text x="888" y="185" fill="#9fe0b9" font-family="system-ui,sans-serif" font-size="16" font-weight="700">STILL IMAGE</text>
+    <text x="888" y="224" fill="#fff" font-family="system-ui,sans-serif" font-size="25" font-weight="700">Dedicated worker</text>
+    <text x="888" y="257" fill="#bfcbc6" font-family="system-ui,sans-serif" font-size="16">Default still route</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="858" y="334" width="282" height="150" rx="18" fill="#382f20" stroke="#d2ba78" stroke-width="2"/>
+    <text x="888" y="377" fill="#ead690" font-family="system-ui,sans-serif" font-size="16" font-weight="700">VIDEO</text>
+    <text x="888" y="416" fill="#fff" font-family="system-ui,sans-serif" font-size="25" font-weight="700">Native Forge backend</text>
+    <text x="888" y="449" fill="#d1c8b6" font-family="system-ui,sans-serif" font-size="16">Physical H3 + native components</text>
+  </g>
+
+  <rect x="60" y="526" width="1080" height="46" rx="12" fill="#202a27"/>
+  <text x="600" y="556" text-anchor="middle" fill="#cbd5d1" font-family="system-ui,sans-serif" font-size="16">Physical GGUF + Still image automatically uses the native backend.</text>
+</svg>

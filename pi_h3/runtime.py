@@ -4,13 +4,17 @@ from pathlib import Path
 from PIL import Image
 from .config import settings
 from .assets import scan, resolve, header
-from .request import validate, parse_loras
+from .request import validate, parse_loras, validate_lora_strength, SAMPLERS
 from .progress import Progress
 from .transport import Worker
 
 LOCK = threading.RLock()
 _worker = None
 _selection_cancel = threading.Event()
+
+
+def _sampler_label(value):
+    return next((label for label, internal in SAMPLERS.items() if internal == value), value)
 
 
 def release():
@@ -37,6 +41,8 @@ def generate(p, options):
         refs += [image for image in options.get('refs', []) if image is not None] if editing else []
         if len(refs) > 9:
             raise ValueError('H3 supports at most nine reference images.')
+        if any(not isinstance(image, Image.Image) for image in refs):
+            raise ValueError('H3 reference must be an image.')
         sampler, scheduler = validate(p.width, p.height, p.steps, float(p.cfg_scale), p.sampler_name,
             getattr(p, 'scheduler', 'Simple'), editing, refs[0] if refs else None,
             getattr(p, 'image_mask', None), getattr(p, 'denoising_strength', 1.0), getattr(p, 'enable_hr', False))
@@ -47,7 +53,13 @@ def generate(p, options):
         inventory = scan()
         paths = {k: resolve(options.get(k), k, inventory) for k in ('dit', 'clip', 'vae')}
         processing.fix_seed(p)
-        count = int(p.batch_size) * int(p.n_iter)
+        try:
+            batch_size, iterations = int(p.batch_size), int(p.n_iter)
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError('Batch size and batch count must be whole numbers.') from None
+        if batch_size != p.batch_size or iterations != p.n_iter:
+            raise ValueError('Batch size and batch count must be whole numbers.')
+        count = batch_size * iterations
         if not 1 <= count <= 64:
             raise ValueError('Choose a total batch of 1–64 images.')
         progress = Progress(shared, int(p.steps), count)
@@ -69,7 +81,7 @@ def generate(p, options):
                     prompt = '<Picture 1> ' + prompt
                 adapters = []
                 if options.get('lora') not in (None, '', '(none)'):
-                    tags.append((options['lora'], float(options.get('strength', 0.38))))
+                    tags.append((options['lora'], validate_lora_strength(options.get('strength', 0.38))))
                 for name, strength in tags:
                     matches = [path for path in inventory['lora'] if path == name or Path(path).stem == name]
                     if len(matches) != 1:
@@ -96,8 +108,6 @@ def generate(p, options):
                     references = []
                     for n, image in enumerate(refs):
                         path = Path(temporary) / f'reference-{n}.png'
-                        if not isinstance(image, Image.Image):
-                            raise ValueError('H3 reference must be an image.')
                         image.convert('RGB').save(path)
                         references.append(str(path))
                     request = dict(paths=paths, prompt=prompt, negative=negative, references=references,
@@ -131,7 +141,7 @@ def generate(p, options):
                         print('[PI-H3] Pixel-drift fix skipped: aligned size', aligned.size,
                               'does not match the requested', (p.width, p.height))
                 progress.finish(result)
-                info = (f'{prompt}\nNegative prompt: {negative}\nSteps: {p.steps}, Sampler: {p.sampler_name}, '
+                info = (f'{prompt}\nNegative prompt: {negative}\nSteps: {p.steps}, Sampler: {_sampler_label(sampler)}, '
                         f'Schedule type: {scheduler}, CFG scale: {p.cfg_scale}, Seed: {seed}, Size: {p.width}x{p.height}, '
                         f'Model: {Path(paths["dit"]).name}, H3 encoder: {Path(paths["clip"]).name}, '
                         f'H3 VAE: {Path(paths["vae"]).name}, H3 decode: Fizgig group 5 frame 3, '

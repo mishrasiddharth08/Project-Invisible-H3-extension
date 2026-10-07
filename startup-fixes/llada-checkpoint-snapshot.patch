@@ -1,0 +1,12 @@
+diff --git a/pi_llada_forge/catalog.py b/pi_llada_forge/catalog.py
+--- a/pi_llada_forge/catalog.py
++++ b/pi_llada_forge/catalog.py
+@@ -112,7 +112,7 @@
+ 
+ def register_checkpoints():
+     from modules import sd_models
+-    known = {str(Path(ci.filename).resolve()): ci for ci in sd_models.checkpoints_list.values()}
++    known = {str(Path(ci.filename).resolve()): ci for ci in sd_models.checkpoints_list.copy().values()}
+     for path in files():
+         if kind(path) != "dit":
+             continue

@@ -130,6 +130,7 @@ class Engine:
         key = fingerprint([paths[k] for k in ('dit', 'clip', 'vae')])
         if self.key == key:
             return
+        self.cond_cache.clear()
         import comfy.model_management as mm
         mm.unload_all_models()
         self.model = self.clip = self.vae = None
@@ -176,7 +177,7 @@ class Engine:
     def cached_condition(self, positive_prompt, negative_prompt, references, width, height, cfg):
         """Encode each prompt once per batch; identical requests reuse the conditioning."""
         import hashlib
-        from .assets import fingerprint
+        from pi_h3.assets import fingerprint
         def encode(prompt):
             key = hashlib.sha256(repr((prompt, width, height, fingerprint(references) if references else ())).encode('utf-8', 'replace')).hexdigest()
             cached = self.cond_cache.get(key)
@@ -187,6 +188,17 @@ class Engine:
                 self.cond_cache[key] = cached
             return cached
         return encode(positive_prompt), encode(positive_prompt if cfg == 1 else negative_prompt)
+
+    def conditioning_for_sample(self, request, width, height, mm):
+        conditioning = self.cached_condition(request['prompt'], request['negative'], request['references'],
+                                             width, height, request['cfg'])
+        # Conditioning tensors remain valid after their source models leave VRAM.
+        # Keep the DiT resident; VAE.decode() reloads its own patcher when needed.
+        for component in (self.clip, self.vae):
+            patcher = getattr(component, 'patcher', None)
+            if patcher is not None:
+                mm.unload_model_and_clones(patcher, unload_additional_models=False)
+        return conditioning
 
     def run(self, request):
         import gc
@@ -202,7 +214,7 @@ class Engine:
         candidate = None
         try:
             emit('status', text='encoding prompt and references')
-            positive, negative = self.cached_condition(request['prompt'], request['negative'], request['references'], width, height, request['cfg'])
+            positive, negative = self.conditioning_for_sample(request, width, height, mm)
             if request['adapters']:
                 # One disposable clone owns every adapter, including quantized patches.
                 candidate = self.model.clone()

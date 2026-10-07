@@ -1,18 +1,57 @@
 # Project Invisible — H3
 
-MiniMax H3 still images and reference editing inside **Forge Neo**.
+MiniMax H3 still images, reference editing, and native video with sound inside **Forge Neo**.
 Select **H3** under **UI Preset**, then use the normal **Generate** button.
 
 [Project page](https://mishrasiddharth08.github.io/Project-Invisible-H3-extension/) · [Test results](VALIDATION.md) · [Quantization support](QUANTIZATION.md)
 
-![H3 portrait](docs/assets/portrait.png)
+![Unified H3 routing](docs/assets/unified-h3-flow.svg)
+
+![One H3 preset in live Forge Neo](docs/assets/ui-single-h3-preset.png)
+
+![Live Still image controls](docs/assets/ui-unified-still.png)
+
+![Live Video controls](docs/assets/ui-unified-video.png)
+
+
+## Unified H3 preset
+
+AiKimi-inspired diagnostics: `GET /pi-h3/status` reports the selected H3 backend, native activation and worker state. It does not start a worker or expose local file paths. Source: [AiKimi Forge Neo](https://github.com/AiWithYou/aikimi-forge-neo).
+
+The pinned Eduardo Abreu v0.6.0 backend is bundled in this extension. Select the single **H3** preset, then choose **Still image** or **Video** in its Output control. Still image is routed to the isolated Fizgig worker by default. Video selects the physical H3 checkpoint and compatible native components. A physical GGUF checkpoint uses the native backend for either output. Use Generate as usual.
+
+Native features include text-to-video with sound, FL2VA first/last frames, Ref2VA references (up to nine using ImageStitch Integrated), GGUF diffusion checkpoints, W4A8/INT4 components, FastH3, sparse attention, TAESD previews, audio shift and file-backed offloading. Optional ImageStitch/Sparse Attention integrations require their Forge components. Actual formats depend on compatible model files and Forge kernels.
+
+Requires Forge Neo revision `d70373e` or newer and comfy-kitchen 0.2.37. Compatibility checks disable the native path when requirements are absent. Use one H3 extension installation; remove a separate `minimax-h3-forge-neo` installation to avoid duplicate runtime hooks.
+
+**Encoder difference:** the native backend rejects NVFP4-AWQ encoders because upstream observed incorrect conditioning. Our H3 still worker continues to support the locally tested NVFP4-AWQ encoder. For native video, use the compatible INT4, INT8 ConvRot or BF16 encoder. Both VAEs are required, even for silent export. No weights are downloaded by Generate.
+
+The combined distribution is AGPL-3.0; each bundled component retains its copyright and license. Credits: [Eduardo Abreu / minimax-h3-forge-neo](https://github.com/eduardoabreu81/minimax-h3-forge-neo), revision `8ec38de8a10bcb924033278dfff64e25fdfc88be`. See NOTICE and licenses/.
+
+### Current verification
+
+Small local API checks used the physical FL2VA int8 ConvRot checkpoint and the approved Qwen3-VL-32B INT4 ConvRot encoder at 384 × 256, seed 62026:
+
+* Native **Still image**: HTTP 200, one image, 2 steps, 34.74 seconds.
+* **Video with audio**: HTTP 200, 22 frames, MP4 written, 4 steps, 21.49 seconds.
+* **Silent video**: HTTP 200, 22 frames, MP4 written, 4 steps, 15.02 seconds.
+
+These are functional checks, not quality or speed benchmarks.
+
+The unified **H3** API then passed Video with audio (46.17 seconds), silent Video (16.38 seconds), first-frame conditioning (31.53 seconds), last-frame conditioning (22.97 seconds), and combined first/last-frame conditioning (22.89 seconds). The live UI contract contained exactly one H3 preset and both Output choices.
+
+The dedicated worker passed all 20 tested sampler/scheduler combinations after restart. Its first cold ER SDE / Simple request took 60.2 seconds; warm checks took 2.08–3.88 seconds at the tiny test settings. An earlier startup interruption was not reproduced, so its exact cause remains unknown.
+
+Unified Still image editing also returned HTTP 200 in 66.34 seconds at 512 × 768. Visual inspection found natural pores and the requested blue-sea background; this is one inspected image, not a general fidelity claim.
+
+**Stop fixed and verified:** an H3-only cancellation guard removed the prior `NoneType` error. Early Stop returned HTTP 200 with zero images in 11.36 seconds; Stop during sampling returned HTTP 200 with zero images in 8.99 seconds. Both follow-up recovery requests returned one image.
 
 ## Project Invisible
 
 Use the familiar Forge workflow: native preset/checkpoint selectors, txt2img,
 img2img, Generate, Stop, gallery and saving. Special controls appear only for H3.
 No additional tab, virtual environment, ComfyUI server or Forge core changes.
-The actual H3 backend runs in a dedicated process using Forge's Python. Its
+The H3 still backend runs in a dedicated process using Forge's Python. Its
 files and helper packages live inside this extension; closing that process
 releases its RAM and VRAM. Other engines retain their ordinary paths.
 
@@ -30,7 +69,7 @@ https://github.com/mishrasiddharth08/Project-Invisible-H3-extension.git
 2. Restart Forge completely, then refresh the browser.
 3. Select **H3** under **UI Preset**. The checkpoint selector shows
    **PROJECT INVISIBLE — MiniMax H3 Still**.
-4. Open **H3 · Still images → Models** if you need to choose specific files.
+4. Open the H3 panel's **Files** section if you need to refresh or download model files.
 
 The installer installs two small backend packages into `vendor/python`, never
 into Forge's shared environment. Full backend source is bundled at a pinned

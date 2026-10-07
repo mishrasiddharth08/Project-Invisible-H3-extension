@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Illustration of the unified H3 controls in Forge Neo</title>
+  <desc id="desc">A clearly labeled conceptual illustration showing the H3 preset and its Still image or Video output control. This is not an actual screenshot.</desc>
+  <rect width="1200" height="720" rx="26" fill="#101416"/>
+  <rect x="32" y="28" width="1136" height="664" rx="18" fill="#202529" stroke="#3e4a4d" stroke-width="2"/>
+  <rect x="32" y="28" width="1136" height="58" rx="18" fill="#2b3236"/>
+  <circle cx="68" cy="57" r="8" fill="#e27676"/><circle cx="94" cy="57" r="8" fill="#d8bd7b"/><circle cx="120" cy="57" r="8" fill="#78b591"/>
+  <text x="600" y="64" text-anchor="middle" fill="#d8e0dd" font-family="system-ui,sans-serif" font-size="17">Forge Neo · txt2img</text>
+
+  <text x="74" y="132" fill="#9cadb0" font-family="system-ui,sans-serif" font-size="14" font-weight="700">UI PRESET</text>
+  <rect x="74" y="148" width="320" height="48" rx="9" fill="#30383d" stroke="#78b591"/>
+  <text x="96" y="179" fill="#fff" font-family="system-ui,sans-serif" font-size="19" font-weight="650">H3</text><path d="m365 167 8 10 8-10" fill="none" stroke="#bcc9c5" stroke-width="2"/>
+
+  <rect x="74" y="232" width="1052" height="368" rx="14" fill="#262d31" stroke="#465257"/>
+  <text x="104" y="278" fill="#fff" font-family="system-ui,sans-serif" font-size="24" font-weight="700">H3</text>
+  <text x="104" y="320" fill="#a8b7b3" font-family="system-ui,sans-serif" font-size="14" font-weight="700">OUTPUT</text>
+  <rect x="104" y="340" width="442" height="58" rx="29" fill="#18201d" stroke="#5b6c66"/>
+  <rect x="110" y="346" width="214" height="46" rx="23" fill="#afe0bf"/>
+  <text x="217" y="376" text-anchor="middle" fill="#153020" font-family="system-ui,sans-serif" font-size="18" font-weight="700">Still image</text>
+  <text x="432" y="376" text-anchor="middle" fill="#d5ddda" font-family="system-ui,sans-serif" font-size="18">Video</text>
+  <text x="104" y="438" fill="#c7d0cd" font-family="system-ui,sans-serif" font-size="17">Choose one output. H3 selects the matching local engine and safe defaults.</text>
+
+  <rect x="104" y="480" width="302" height="72" rx="10" fill="#30383d"/>
+  <text x="126" y="509" fill="#9cadb0" font-family="system-ui,sans-serif" font-size="13">MEMORY MODE</text>
+  <text x="126" y="536" fill="#fff" font-family="system-ui,sans-serif" font-size="17">auto</text>
+  <rect x="430" y="480" width="302" height="72" rx="10" fill="#30383d"/>
+  <text x="452" y="509" fill="#9cadb0" font-family="system-ui,sans-serif" font-size="13">MODEL FILES</text>
+  <text x="452" y="536" fill="#fff" font-family="system-ui,sans-serif" font-size="17">Use local H3 files</text>
+  <rect x="756" y="480" width="338" height="72" rx="10" fill="#30383d"/>
+  <text x="778" y="509" fill="#9cadb0" font-family="system-ui,sans-serif" font-size="13">GENERATE</text>
+  <text x="778" y="536" fill="#fff" font-family="system-ui,sans-serif" font-size="17">Normal Forge button and gallery</text>
+
+  <rect x="346" y="632" width="508" height="38" rx="19" fill="#4b3521" stroke="#d8bd7b"/>
+  <text x="600" y="657" text-anchor="middle" fill="#ffe7aa" font-family="system-ui,sans-serif" font-size="16" font-weight="700">UI ILLUSTRATION · NOT AN ACTUAL SCREENSHOT</text>
+</svg>

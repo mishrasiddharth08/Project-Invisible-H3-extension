@@ -24,6 +24,7 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         inventory = scan()
         mode = 'i2i' if is_img2img else 't2i'
+        tab = 'img2img' if is_img2img else 'txt2img'
         refs: list = []
         # Preset + Autolink resolve checkpoint/TE/VAE; LoRA works via <lora:name:strength>
         # prompt tags. All four stay as hidden components to preserve the script_args contract.
@@ -35,9 +36,13 @@ class Script(scripts.Script):
         def refresh_files():
             found = scan()
             return [gr.update(choices=['Auto']+found[k], value='Auto') for k in ('dit','clip','vae')] + [gr.update(choices=['(none)']+found['lora'], value='(none)')]
-        with gr.Accordion('H3 · Still images', open=False, visible=forge.selected(), elem_id=f'pi_h3_{mode}_panel', elem_classes=['pi-h3-panel']) as panel:
-            gr.Markdown('Best: ER SDE / Simple / CFG 1 / 50 steps · multiples of 32 · ≥3 MP recommended'
-                        + (' · Denoise = 1 · use `<Picture 1>` for edits' if is_img2img else ' · editing via img2img')
+        with gr.Accordion('H3', open=False, visible=forge.ui_active(), elem_id=f'pi_h3_{mode}_panel', elem_classes=['pi-h3-panel']) as panel:
+            output = gr.Radio(
+                ['Still image', 'Video'], value=forge.output_mode(), label='Output',
+                elem_id=f'{tab}_h3_output',
+            )
+            gr.Markdown('Choose **Still image** or **Video** here. H3 selects the matching local engine and safe defaults.'
+                        + (' · Denoise = 1 for H3 image/video conditioning.' if is_img2img else '')
                         + ' · LoRA via `<lora:name:strength>`')
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
                 with gr.Tab('Memory'):
@@ -62,7 +67,8 @@ class Script(scripts.Script):
                         with gr.Row():
                             refs.extend(gr.Image(type='pil', label=f'Picture {i}', elem_id=f'pi_h3_i2i_ref_{i}') for i in range(6, 10))
         forge.register_ui_binding(panel, is_img2img)
-        return [dit, clip, vae, lora, strength, memory, keep, drift, *refs]
+        # Output is appended so every existing script/API argument keeps its position.
+        return [dit, clip, vae, lora, strength, memory, keep, drift, *refs, output]
 
 
 try:
@@ -71,3 +77,7 @@ try:
 except Exception as error:
     print('[PI-H3] Integration unavailable:', error)
     raise
+
+from modules import script_callbacks
+from pi_h3 import health
+script_callbacks.on_app_started(health.app_started)

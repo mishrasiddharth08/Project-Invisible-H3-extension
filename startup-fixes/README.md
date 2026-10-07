@@ -6,7 +6,10 @@ Measured locally on September 28, 2026: normal startup fell from 23.76 seconds t
 - ADetailer patch: reuse existing nonempty standard model files; download missing files only. Six focused tests passed.
 - AutoLink patch: cache model fingerprints with file-change invalidation and independent metadata copies.
 - Launcher patch: avoid implicitly enabling UV in fast mode, preventing the incompatible `pip freeze --all` diagnostics call. Explicit UV and full installation behavior remain available. Three mocked mode tests passed.
+- Boogu checkpoint snapshot patch: iterate over a dictionary copy while concurrent page/API refreshes update Forge's checkpoint registry. Includes a focused regression test.
 
 The H3 fix is included in the extension. The adjacent patches target separate local components and are not automatically installed by H3. Apply each patch from its corresponding project root after reviewing it and backing up the original. These patches have not been merged into the third-party upstream repositories.
 
 Profiling identified redundant model network checks and callback stack inspection. Profiling timings include substantial instrumentation overhead and are not used as real startup speed measurements. H3 callback tests passed. This does not promise universal speed or quantization support.
+
+LLaDA and SenseNova checkpoint snapshot patches address the same concurrent registry-read failure seen during API/page initialization. H3 also serializes its active refresh chain; other presets delegate normally.

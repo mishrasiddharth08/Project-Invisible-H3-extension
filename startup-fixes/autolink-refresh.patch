@@ -1,0 +1,140 @@
+diff --git a/model_autolink/integration.py b/model_autolink/integration.py
+index e4a0bd4..7f257f3 100644
+--- a/model_autolink/integration.py
++++ b/model_autolink/integration.py
+@@ -36,6 +36,25 @@ def _is_real_model_file(path) -> bool:
+         return False
+ 
+ 
++def _refresh_after_rename(original_refresh, rename, rescan):
++    """Refresh Forge again when smart rename changed names on disk."""
++    result = original_refresh()
++    renamed = []
++    try:
++        renamed = rename()
++    except Exception as exc:
++        print(f"[Model Autolink] Smart rename failed: {exc}")
++    if renamed:
++        # The first refresh populated Forge's module_list with the old names.
++        # Rebuild it now so API/UI requests can use canonical names immediately.
++        result = original_refresh()
++    try:
++        rescan()
++    except Exception as exc:
++        print(f"[Model Autolink] Component rescan failed: {exc}")
++    return result
++
++
+ def _current_checkpoint_path():
+     from modules import sd_models, shared
+ 
+@@ -227,17 +246,16 @@ def _patch_forge(extension_root: Path):
+         _resolver.registry.scan_components(_resolver.component_folders)
+ 
+     def refresh_models():
+-        result = original_refresh_models()
+-        try:
+-            if bool(getattr(shared.opts, "model_autolink_smart_rename", True)):
+-                smart_rename(_resolver.registry, _smart_rename_folders(), extension_root, apply=True)
+-        except Exception as exc:
+-            print(f"[Model Autolink] Smart rename failed: {exc}")
+-        try:
+-            _resolver.registry.scan_components(_resolver.component_folders)
+-        except Exception as exc:
+-            print(f"[Model Autolink] Component rescan failed: {exc}")
+-        return result
++        def rename():
++            if not bool(getattr(shared.opts, "model_autolink_smart_rename", True)):
++                return []
++            return smart_rename(_resolver.registry, _smart_rename_folders(), extension_root, apply=True)
++
++        return _refresh_after_rename(
++            original_refresh_models,
++            rename,
++            lambda: _resolver.registry.scan_components(_resolver.component_folders),
++        )
+ 
+     def refresh_model_loading_parameters(*, refresh=True):
+         if _enabled() and not getattr(_state, "manual_change", False) and not getattr(_state, "checkpoint_change", False):
+diff --git a/tests/test_refresh_after_rename.py b/tests/test_refresh_after_rename.py
+new file mode 100644
+index 0000000..c25d69d
+--- /dev/null
++++ b/tests/test_refresh_after_rename.py
+@@ -0,0 +1,76 @@
++import importlib.util
++import sys
++import types
++from pathlib import Path
++
++
++def load_candidate():
++    root = Path(__file__).resolve().parents[1]
++    package = types.ModuleType("candidate_model_autolink")
++    package.__path__ = [str(root / "model_autolink")]
++    stubs = {
++        "compatibility": {"DEFAULT_QUANT_PRIORITY": {}},
++        "fingerprint": {"quantization": lambda *_: "plain"},
++        "resolver": {"ResolutionError": RuntimeError, "Resolver": object},
++        "smartname": {"smart_rename": lambda *_args, **_kwargs: []},
++    }
++    modules = {"candidate_model_autolink": package}
++    for name, values in stubs.items():
++        module = types.ModuleType(f"candidate_model_autolink.{name}")
++        vars(module).update(values)
++        modules[module.__name__] = module
++    previous = {name: sys.modules.get(name) for name in modules}
++    sys.modules.update(modules)
++    try:
++        spec = importlib.util.spec_from_file_location(
++            "candidate_model_autolink.integration",
++            root / "model_autolink" / "integration.py",
++        )
++        module = importlib.util.module_from_spec(spec)
++        sys.modules[spec.name] = module
++        spec.loader.exec_module(module)
++        return module
++    finally:
++        for name, value in previous.items():
++            if value is None:
++                sys.modules.pop(name, None)
++            else:
++                sys.modules[name] = value
++
++
++integration = load_candidate()
++
++
++def test_rename_rebuilds_forge_module_list_before_return():
++    files = {"downloaded-int4.safetensors"}
++    module_list = {}
++    calls = []
++
++    def refresh():
++        calls.append("refresh")
++        module_list.clear()
++        module_list.update({name: f"models/{name}" for name in files})
++        return sorted(module_list)
++
++    def rename():
++        calls.append("rename")
++        files.remove("downloaded-int4.safetensors")
++        files.add("qwen3vl_32b_minimax_h3_int4_convrot.safetensors")
++        return [("downloaded-int4.safetensors", "qwen3vl_32b_minimax_h3_int4_convrot.safetensors")]
++
++    result = integration._refresh_after_rename(refresh, rename, lambda: calls.append("rescan"))
++
++    assert calls == ["refresh", "rename", "refresh", "rescan"]
++    assert result == ["qwen3vl_32b_minimax_h3_int4_convrot.safetensors"]
++    assert list(module_list) == result
++
++
++def test_no_rename_keeps_single_forge_refresh():
++    calls = []
++    result = integration._refresh_after_rename(
++        lambda: calls.append("refresh") or ["existing.safetensors"],
++        lambda: calls.append("rename") or [],
++        lambda: calls.append("rescan"),
++    )
++    assert calls == ["refresh", "rename", "rescan"]
++    assert result == ["existing.safetensors"]

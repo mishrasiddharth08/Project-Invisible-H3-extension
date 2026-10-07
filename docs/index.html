@@ -1,16 +1,60 @@
-﻿<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="MiniMax H3 portraits and reference editing inside Forge Neo. Native controls, local generation, tested results."><title>Project Invisible · H3 for Forge Neo</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#111719;color:#f0eee8;font:17px/1.6 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:64px 24px}small{color:#acd6be;letter-spacing:.12em}h1{font-size:clamp(44px,7vw,82px);line-height:1.05;margin:20px 0}h2{font-size:28px;margin-top:48px}p{max-width:760px;color:#c3cdca}a{color:#afe0bf}nav{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0}.button{padding:12px 20px;border:1px solid #78b591;border-radius:8px;text-decoration:none}.primary{background:#afe0bf;color:#112019}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}figure{margin:0}img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px}figcaption{padding-top:10px;color:#c3cdca}.notice{border-left:3px solid #d8bd7b;padding:12px 20px;background:#20251f}code{background:#25312c;padding:3px 7px;border-radius:4px}footer{margin-top:64px;border-top:1px solid #34423c;padding-top:22px;font-size:14px;color:#aab7b1}@media(max-width:640px){main{padding-top:38px}.grid{grid-template-columns:1fr}}</style></head><body><main>
-<small>PROJECT INVISIBLE / FORGE NEO</small><h1>Meet H3.<br>Keep your workflow.</h1>
-<p>MiniMax H3 still images and reference editing through Forge's familiar Generate button. Select <strong>H3</strong> in UI Preset. Your existing model folders, gallery and saving stay part of the workflow.</p>
-<nav><a class="button primary" href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/archive/refs/heads/main.zip">Download extension</a><a class="button" href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension">Source & setup guide</a></nav>
-<div class="grid"><figure><img src="assets/portrait.png" alt="AI-generated close-up portrait with natural skin texture and a white shirt"><figcaption>Generated with H3 · 1536 × 2048</figcaption></figure><figure><img src="assets/edited.png" alt="H3 reference edit changes the woman's white shirt to green"><figcaption>Reference edit · white shirt → green · 768 × 1024</figcaption></figure></div>
-<div class="grid"><figure><img src="assets/ui.png" alt="H3 tabbed control panel inside Forge Neo" style="aspect-ratio:auto"><figcaption>Tabbed H3 panel — Models / Memory / Files</figcaption></figure><figure><img src="assets/progress.png" alt="Dual H3 progress bars with a developing preview" style="aspect-ratio:auto"><figcaption>Dual progress bars with real developing preview</figcaption></figure></div>
-<h2>Install in three steps</h2><ol><li>Download and extract the extension into Forge's <code>extensions</code> folder.</li><li>Restart Forge and select <strong>H3</strong> under UI Preset.</li><li>Choose your H3 checkpoint, Qwen3-VL-32B encoder and H3 video VAE, then Generate.</li></ol>
-<p>First setup installs two pinned helper packages inside this extension. Model weights are downloaded separately. Generation runs locally and offline.</p>
-<h2>Built around Forge</h2><ul><li>Native txt2img, img2img, Generate, Stop, gallery and saving.</li><li>Two progress bars and developing previews.</li><li>Sequential batches and an isolated worker that releases memory.</li><li>No additional tab, virtual environment or Forge core changes.</li></ul>
-<h2>Tested, with clear limits</h2><p>58 automated tests passed. Live checks covered portraits, shirt-color editing, reference influence, LoRA removal, batches, browser refresh, Stop, recovery and model-switch cleanup on an RTX 5090.</p>
-<div class="notice"><strong>Experimental FL2VA editing.</strong> Exact identity preservation is not guaranteed. INT8 and NVFP4 were tested locally; integer INT4 inference remains unverified, and GGUF is unsupported. Cold-start speed varies.</div>
-<nav><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/blob/main/VALIDATION.md">Test results</a><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/blob/main/QUANTIZATION.md">Quantization support</a><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/issues">Report an issue</a></nav>
-<h2>Special Thanks</h2><ul><li><a href="https://www.reddit.com/r/sdforall/">r/sdforall</a> — community discussion and testing</li><li><a href="https://www.reddit.com/r/SECourses/">r/SECourses</a> — community discussion and testing</li><li><a href="https://www.reddit.com/r/malcolmrey/">r/malcolmrey</a> — community discussion and testing</li><li><a href="https://github.com/Haoming02/sd-webui-forge-classic/tree/neo">Haoming02 / sd-webui-forge-classic (neo branch)</a> — the Forge Neo tree this extension targets</li><li><a href="https://github.com/shootthesound">ShootTheSound / Peter Neill</a> and <a href="https://github.com/shootthesound/ComfyUI-Fizgig-H3-Still/tree/main">ComfyUI-Fizgig-H3-Still</a> — H3 still-image latent and decoder implementation</li><li><a href="https://github.com/Adeliox">Adeliox</a> — original Klein Head Swap</li><li><a href="https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap">Alissonerdx</a> — BFS (Best Face Swap) workflow and LoRAs</li><li><a href="https://github.com/PozzettiAndrea/ComfyUI-SAM3">PozzettiAndrea / ComfyUI-SAM3</a> and <a href="https://github.com/facebookresearch/sam3">Meta SAM3</a> — segmentation workflow inspiration across Project Invisible</li><li><a href="https://github.com/comfyanonymous/ComfyUI">ComfyUI</a> — H3 backend and upstream sampler/scheduler coverage</li><li>The Forge / AUTOMATIC1111 community — for the extension ecosystem this plugs into</li><li>Project Invisible extensions — memory policy, GPU compatibility and extension philosophy</li></ul><p>Thank you to the wider Forge, Diffusers, Qwen, DeGrid and open-source communities. Head-swap, BFS and SAM3 credits acknowledge the wider ecosystem; those tools are not bundled H3 features.</p><footer>Project Invisible · H3 · September 2026<br>Built with ComfyUI and Fizgig H3 Still. See repository credits and licenses. Images on this page are AI-generated.</footer>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="MiniMax H3 still images and native video inside Forge Neo through one H3 preset.">
+  <title>Project Invisible · H3 for Forge Neo</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#111719;color:#f0eee8;font:17px/1.6 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:64px 24px}small{color:#acd6be;letter-spacing:.12em;font-weight:700}h1{font-size:clamp(44px,7vw,82px);line-height:1.05;margin:20px 0}h2{font-size:30px;margin-top:54px}p{max-width:820px;color:#c3cdca}a{color:#afe0bf}nav{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0}.button{padding:12px 20px;border:1px solid #78b591;border-radius:8px;text-decoration:none}.primary{background:#afe0bf;color:#112019}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{padding:20px;border:1px solid #34423c;border-radius:12px;background:#18211e}.card strong{display:block;color:#afe0bf;font-size:24px}figure{margin:0}img{display:block;width:100%;border-radius:12px;border:1px solid #34423c}figcaption{padding-top:10px;color:#c3cdca}.notice{border-left:3px solid #d8bd7b;padding:14px 20px;background:#20251f}.issue{border-left-color:#dc8b7e}code{background:#25312c;padding:3px 7px;border-radius:4px}footer{margin-top:64px;border-top:1px solid #34423c;padding-top:22px;font-size:14px;color:#aab7b1}@media(max-width:760px){main{padding-top:38px}.grid,.cards{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main>
+  <small>PROJECT INVISIBLE / FORGE NEO</small>
+  <h1>One H3 preset.<br>Still image or video.</h1>
+  <p>Select <strong>H3</strong> in UI Preset, choose the Output, then use Forge's normal Generate button. H3 selects the matching local engine while the familiar checkpoint, gallery and saving workflow remains in place.</p>
+  <nav><a class="button primary" href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/archive/refs/heads/main.zip">Download extension</a><a class="button" href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension">Source &amp; setup guide</a></nav>
+
+  <figure><img src="assets/unified-h3-flow.svg" alt="Infographic showing one H3 preset routing Still image to the dedicated worker and Video to the native Forge backend"><figcaption>Unified H3 routing. A physical GGUF checkpoint uses the native backend for either output.</figcaption></figure>
+
+  <h2>Simple controls</h2>
+  <div class="grid">
+    <figure><img src="assets/ui-unified-still.png" alt="Actual Still image output controls in Forge Neo"><figcaption>Live Still image controls.</figcaption></figure>
+    <figure><img src="assets/progress.png" alt="Dual H3 progress bars with a developing preview"><figcaption>Previously captured still-worker progress view.</figcaption></figure>
+  </div>
+
+  <h2>Verified native runs</h2>
+  <p>Local API runs used the physical FL2VA int8 ConvRot checkpoint with the approved Qwen3-VL-32B INT4 ConvRot encoder at 384 × 256, seed 62026.</p>
+  <div class="cards">
+    <div class="card"><strong>34.74 s</strong>Native Still image<br>2 steps · HTTP 200 · one image</div>
+    <div class="card"><strong>21.49 s</strong>Video with audio<br>4 steps · 22 frames · MP4 written</div>
+    <div class="card"><strong>15.02 s</strong>Silent video<br>4 steps · 22 frames · MP4 written</div>
+  </div>
+  <p>These are small functional checks, not quality or speed benchmarks. The recorded request metadata confirms the INT4 encoder and requested audio state.</p>
+
+  <h2>Unified live checks</h2>
+  <p>The live UI contract reported exactly one H3 preset and both Output choices. Unified API requests passed Video with audio (46.17 s), silent Video (16.38 s), first-frame conditioning (31.53 s), last-frame conditioning (22.97 s), and combined first/last-frame conditioning (22.89 s).</p>
+  <p>The dedicated worker passed all 20 tested sampler/scheduler combinations after restart. The first cold check took 60.2 seconds; warm tiny-setting checks took 2.08–3.88 seconds.</p>
+  <div class="notice"><strong>Stop fixed and verified.</strong> An H3-only cancellation guard removed the prior error. Early Stop and Stop during sampling returned HTTP 200 with zero images; both recovery requests returned one image.</div>
+
+  <h2>Generated examples</h2>
+  <div class="grid"><figure><img src="assets/unified-edit.png" alt="Unified H3 Still image edit of an adult woman with natural pores and a blue sea background"><figcaption>Unified Still image edit · HTTP 200 · 512 × 768 · 66.34 s. One visually inspected result.</figcaption></figure><figure><img src="assets/portrait.png" alt="AI-generated close-up portrait with natural skin texture and a white shirt"><figcaption>Earlier H3 still portrait · 1536 × 2048</figcaption></figure></div>
+
+  <figure><img src="assets/ui-single-h3-preset.png" alt="Live UI Preset dropdown showing exactly one H3 option"><figcaption>Exactly one H3 preset in live Forge Neo.</figcaption></figure>
+<figure><img src="assets/ui-unified-video.png" alt="Actual Video output controls in Forge Neo"><figcaption>Live Video controls with automatic compatible components.</figcaption></figure>
+<h2>Install in three steps</h2>
+  <ol><li>Download and extract the extension into Forge's <code>extensions</code> folder.</li><li>Restart Forge and select <strong>H3</strong> under UI Preset.</li><li>Choose <strong>Still image</strong> or <strong>Video</strong>, then Generate.</li></ol>
+  <p>Model weights are downloaded separately. Generate never downloads weights. Generation runs locally.</p>
+
+  <h2>Built around Forge</h2>
+  <ul><li><a href="https://github.com/eduardoabreu81/minimax-h3-forge-neo">Eduardo Abreu / minimax-h3-forge-neo</a> — native video, audio, quantization and memory backend (AGPL-3.0)</li><li>Native txt2img, img2img, Generate, Stop, gallery and saving.</li><li>An isolated still worker that releases its memory.</li><li>No additional tab, virtual environment or Forge core changes.</li></ul>
+
+  <h2>Tested, with clear limits</h2>
+  <p>Current CPU suites pass 128 main tests and 106 imported native-backend tests, 234 total. A separate 75-test Boogu regression suite also passed after its installed refresh-snapshot fix. Full-model Ref2VA, GGUF, W4A8 and FastH3 remain unverified locally.</p>
+  <nav><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/blob/main/VALIDATION.md">Test results</a><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/blob/main/QUANTIZATION.md">Quantization support</a><a href="https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/issues">Report an issue</a></nav>
+
+  <h2>Special Thanks</h2>
+  <ul><li><a href="https://www.reddit.com/r/sdforall/">r/sdforall</a> — community discussion and testing</li><li><a href="https://www.reddit.com/r/SECourses/">r/SECourses</a> — community discussion and testing</li><li><a href="https://www.reddit.com/r/malcolmrey/">r/malcolmrey</a> — community discussion and testing</li><li><a href="https://github.com/Haoming02/sd-webui-forge-classic/tree/neo">Haoming02 / sd-webui-forge-classic (neo branch)</a> — the Forge Neo tree this extension targets</li><li><a href="https://github.com/shootthesound">ShootTheSound / Peter Neill</a> and <a href="https://github.com/shootthesound/ComfyUI-Fizgig-H3-Still/tree/main">ComfyUI-Fizgig-H3-Still</a> — H3 still-image latent and decoder implementation</li><li><a href="https://github.com/Adeliox">Adeliox</a> — original Klein Head Swap</li><li><a href="https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap">Alissonerdx</a> — BFS (Best Face Swap) workflow and LoRAs</li><li><a href="https://github.com/PozzettiAndrea/ComfyUI-SAM3">PozzettiAndrea / ComfyUI-SAM3</a> and <a href="https://github.com/facebookresearch/sam3">Meta SAM3</a> — segmentation workflow inspiration across Project Invisible</li><li><a href="https://github.com/comfyanonymous/ComfyUI">ComfyUI</a> — H3 backend and upstream sampler/scheduler coverage</li><li>The Forge / AUTOMATIC1111 community — for the extension ecosystem this plugs into</li><li>Project Invisible extensions — memory policy, GPU compatibility and extension philosophy</li></ul>
+  <p>Thank you to the wider Forge, Diffusers, Qwen, DeGrid and open-source communities. Head-swap, BFS and SAM3 credits acknowledge the wider ecosystem; those tools are not bundled H3 features.</p>
+  <footer>Project Invisible · H3<br>Built with ComfyUI and Fizgig H3 Still. See repository credits and licenses. Example images are AI-generated; UI images are actual Forge screenshots.</footer>
 </main></body></html>

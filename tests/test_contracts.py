@@ -130,7 +130,8 @@ class Hooks(unittest.TestCase):
 
     def test_override_routes_only_h3(self):
         forge.install()
-        p=types.SimpleNamespace(override_settings={'sd_model_checkpoint':forge.LABEL})
+        p=types.SimpleNamespace(override_settings={
+            'forge_preset': 'H3', 'sd_model_checkpoint': forge.LABEL})
         with patch.object(runtime,'generate',return_value='H3 result') as generate:
             self.assertEqual(self.processing.process_images(p),'H3 result')
             generate.assert_called_once()

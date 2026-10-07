@@ -30,8 +30,13 @@ def validate(width, height, steps, cfg, sampler, scheduler, editing=False, image
         raise ValueError('Add an image in img2img before generating an edit.')
     if mask is not None:
         raise ValueError('H3 still reference editing does not support masks. Use plain img2img.')
-    if editing and abs(float(denoise) - 1.0) > 1e-6:
-        raise ValueError('Set img2img Denoising strength to 1. H3 uses reference conditioning, not SD denoising.')
+    if editing:
+        try:
+            denoise = float(denoise)
+        except (TypeError, ValueError):
+            raise ValueError('Set img2img Denoising strength to 1. H3 uses reference conditioning, not SD denoising.') from None
+        if not math.isfinite(denoise) or abs(denoise - 1.0) > 1e-6:
+            raise ValueError('Set img2img Denoising strength to 1. H3 uses reference conditioning, not SD denoising.')
     if hires:
         raise ValueError('Disable Hires fix for H3. Set the desired final width and height directly.')
     return SAMPLERS[sampler], SCHEDULERS.get(scheduler, 'simple')
@@ -41,15 +46,20 @@ def parse_loras(prompt):
     adapters = []
     def take(match):
         name, raw_strength = match.group(1), match.group(2)
-        try:
-            strength = float(raw_strength)
-        except ValueError:
-            raise ValueError('Invalid LoRA strength: <lora:' + name + ':' + raw_strength + '>. Use a number between -2 and 2.') from None
-        if not math.isfinite(strength) or not -2 <= strength <= 2:
-            raise ValueError('LoRA strength must be between -2 and 2.')
+        strength = validate_lora_strength(raw_strength, '<lora:' + name + ':' + raw_strength + '>')
         adapters.append((name, strength))
         return ''
     prompt = re.sub(r'<lora:([^:<>]+):([-+\d.eE]+)>', take, prompt)
     if re.search(r'<(?:lora|lyco|hypernet):', prompt, re.I):
         raise ValueError('Unsupported or malformed adapter tag. Use <lora:H3-filename:strength>.')
     return prompt.strip(), adapters
+
+
+def validate_lora_strength(value, source='selected LoRA'):
+    try:
+        strength = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f'Invalid LoRA strength for {source}. Use a number between -2 and 2.') from None
+    if not math.isfinite(strength) or not -2 <= strength <= 2:
+        raise ValueError('LoRA strength must be between -2 and 2.')
+    return strength

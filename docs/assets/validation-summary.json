@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-07",
+  "cpu_tests": {
+    "extension": 128,
+    "native": 106
+  },
+  "sampler_schedule_cases": 20,
+  "sampler_schedule_passed": 20,
+  "final_live": [
+    {
+      "case": "saved-video-migration",
+      "passed": true,
+      "H3_count": 1
+    },
+    {
+      "case": "early-api-video",
+      "http": 200,
+      "seconds": 40.89,
+      "images": 1
+    },
+    {
+      "case": "stop-early",
+      "http": 200,
+      "seconds": 11.36,
+      "images": 0
+    },
+    {
+      "case": "stop-early-recovery",
+      "http": 200,
+      "seconds": 20.82,
+      "images": 1
+    },
+    {
+      "case": "stop-sampling",
+      "http": 200,
+      "seconds": 8.99,
+      "images": 0
+    },
+    {
+      "case": "stop-sampling-recovery",
+      "http": 200,
+      "seconds": 12.91,
+      "images": 1
+    }
+  ],
+  "unverified_full_model_formats": [
+    "GGUF",
+    "W4A8",
+    "Ref2VA",
+    "FastH3"
+  ]
+}

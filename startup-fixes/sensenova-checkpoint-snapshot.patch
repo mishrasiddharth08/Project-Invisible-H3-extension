@@ -1,0 +1,12 @@
+diff --git a/pi_sensenova/selection.py b/pi_sensenova/selection.py
+--- a/pi_sensenova/selection.py
++++ b/pi_sensenova/selection.py
+@@ -20,7 +20,7 @@
+ 
+ def register():
+     from modules import sd_models
+-    known = {str(Path(c.filename).resolve()) for c in sd_models.checkpoints_list.values()}
++    known = {str(Path(c.filename).resolve()) for c in sd_models.checkpoints_list.copy().values()}
+     for root in model_roots():
+         if not root.is_dir():
+             continue

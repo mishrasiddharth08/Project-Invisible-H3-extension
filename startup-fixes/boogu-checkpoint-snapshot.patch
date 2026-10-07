@@ -1,0 +1,47 @@
+diff --git a/pi_boogu_image/forge.py b/pi_boogu_image/forge.py
+--- a/pi_boogu_image/forge.py
++++ b/pi_boogu_image/forge.py
+@@ -39,7 +39,7 @@ def register_checkpoints():
+     for asset in discovered:
+         path = str(asset.path.resolve())
+         _registered[path.casefold()] = asset
+-        ci = next((c for c in sd_models.checkpoints_list.values() if
++        ci = next((c for c in sd_models.checkpoints_list.copy().values() if
+                    str(Path(c.filename).resolve()).casefold() == path.casefold()), None)
+         if ci is None:
+             ci = sd_models.CheckpointInfo(path)
+diff --git a/tests/test_forge_hooks.py b/tests/test_forge_hooks.py
+--- a/tests/test_forge_hooks.py
++++ b/tests/test_forge_hooks.py
+@@ -22,6 +22,31 @@ class HookTests(unittest.TestCase):
+             result = forge.controls(None, runner, (trunk, 768, 'turbo' not in trunk), asset)
+             self.assertEqual(result, {'ceiling': 768, 'distill': 'turbo' in trunk})
+ 
++    def test_checkpoint_registration_reads_a_stable_snapshot(self):
++        path = Path('boogu.safetensors').resolve()
++        asset = Asset(path, 'base', 'bf16')
++        class MutatingValues(dict):
++            def values(self):
++                iterator = iter(super().values())
++                owner = self
++                class Values:
++                    def __iter__(self):
++                        first = next(iterator)
++                        yield first
++                        owner['concurrent'] = first
++                        yield from iterator
++                return Values()
++        checkpoint = SimpleNamespace(
++            filename=str(path), name='old', title='old', short_title='old',
++            shorthash=None, ids=[], register=lambda: None)
++        checkpoints = MutatingValues(old=checkpoint)
++        modules = ModuleType('modules')
++        modules.sd_models = SimpleNamespace(checkpoints_list=checkpoints)
++        with patch.dict('sys.modules', {'modules': modules}), patch.object(
++                forge.assets, 'scan', return_value=[asset]):
++            forge.register_checkpoints()
++        self.assertEqual(checkpoint.name, 'Boogu — base — boogu')
++
+     def setUp(self):
+         self.calls=[]
+         calls=self.calls

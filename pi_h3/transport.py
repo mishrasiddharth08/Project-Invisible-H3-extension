@@ -47,6 +47,31 @@ class Worker:
             if protocol:
                 self.events.put({'type': 'exit'})
 
+    def _failure_details(self):
+        process = getattr(self, 'process', None)
+        code = None
+        if process is not None:
+            try:
+                code = process.poll()
+                if code is None:
+                    try:
+                        code = process.wait(timeout=0.2)
+                    except subprocess.TimeoutExpired:
+                        pass
+            except (AttributeError, OSError):
+                pass
+        details = []
+        if code is not None:
+            details.append(f'exit code {code}')
+        error_tail = '\n'.join(getattr(self, 'errors', ()))[-2500:]
+        if error_tail:
+            details.append(error_tail)
+        return '\n'.join(details)
+
+    def _worker_error(self, message):
+        details = self._failure_details()
+        return RuntimeError(message + ((' ' + details) if details else ''))
+
     def receive(self, cancelled, timeout=7200):
         start = time.monotonic()
         while time.monotonic() - start < timeout:
@@ -58,7 +83,7 @@ class Worker:
             except queue.Empty:
                 continue
             if event['type'] == 'exit':
-                raise RuntimeError('H3 worker stopped. ' + '\n'.join(self.errors)[-2500:])
+                raise self._worker_error('H3 worker stopped.')
             if event['type'] == 'error':
                 raise RuntimeError('H3: ' + event['message'])
             if event['type'] == 'protocol_error':
@@ -82,7 +107,7 @@ class Worker:
             self.close()
             raise InterruptedError('H3 generation stopped.')
         if self.process.poll() is not None:
-            raise RuntimeError('H3 worker is not running. ' + '\n'.join(self.errors)[-2500:])
+            raise self._worker_error('H3 worker is not running.')
         self.process.stdin.write(json.dumps(request) + '\n')
         self.process.stdin.flush()
         while True:

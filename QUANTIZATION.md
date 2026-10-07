@@ -1,4 +1,10 @@
-# H3 quantization support — September 28, 2026
+# Unified native route
+
+H3 Video output uses Eduardo Abreu’s native Forge backend at revision 8ec38de. It implements GGUF diffusion models (Q2_K–Q8_0), W4A8, INT4 and INT8 formats supported by that backend and Forge. Native NVFP4-AWQ text encoding is explicitly rejected because upstream observed incorrect prompt conditioning. Use a compatible INT4, INT8 or BF16 encoder for the native route.
+
+The dedicated still worker remains `.safetensors` only and supports its locally tested NVFP4-AWQ encoder. A physical GGUF checkpoint automatically uses the native backend, including when Output is Still image. This means GGUF is implemented in the combined extension even though the dedicated worker itself does not load GGUF.
+
+# H3 quantization support
 
 This extension loads ComfyUI native `.safetensors` files. A filename such as
 `int4` is not proof of its format: the file must contain valid H3 tensors and
@@ -17,15 +23,17 @@ native `comfy_quant` metadata understood by the pinned backend.
 | Text encoder | BF16 | Yes · 51.51 GB | Official; not locally tested |
 | Text encoder | INT8 TensorWise + ConvRot | Yes · 27.14 GB | Official; not locally tested |
 | Text encoder | NVFP4 AWQ | Yes · 15.69 GB | **Locally tested**; FP4, not integer INT4 |
-| Text encoder | integer INT4 W4A4/W4A8 | No | Backend linear formats supported; H3 conversion unverified |
+| Text encoder | INT4 ConvRot | Approved external file | **Locally tested on the native route** |
 | Video VAE | FP16 | Yes · 5.21 GB | **Locally tested** |
 | Video VAE | INT8 ConvRot | Yes · 2.81 GB | Official; not locally tested |
 | Video VAE | INT4 / FP8 / NVFP4 | No | No supported H3 VAE file established |
-| Any component | GGUF | No | Unsupported by this dedicated worker |
+| Diffusion model | GGUF Q2_K–Q8_0 | External files | Implemented by native route; full local generation unverified |
 
-The tested combination is the user's pruned INT8 ConvRot DiT, NVFP4-AWQ text
-encoder and FP16 video VAE. Real txt2img and experimental FL2VA reference runs
-loaded these files. This does not validate every format in the table.
+The dedicated worker's tested combination is the user's pruned INT8 ConvRot DiT,
+NVFP4-AWQ text encoder and FP16 video VAE. The native route was separately tested
+with the pruned INT8 ConvRot DiT, Qwen3-VL-32B INT4 ConvRot text encoder, FP16
+video VAE and FP32 audio VAE. It completed native Still image, video with audio
+and silent-video requests. This does not validate every format in the table.
 
 ## Native backend formats
 
@@ -35,9 +43,10 @@ The last two are the native integer INT4 routes: 4-bit weight/4-bit activation
 and 4-bit weight/8-bit activation. Hardware kernels, correct conversion and H3
 tensor compatibility are still required.
 
-Detection accepts those metadata names without claiming inference success.
-Unknown pickle files and GGUF remain blocked. Do not rename a GGUF or arbitrary
-INT4 model to `.safetensors`.
+Detection accepts those metadata names without claiming inference success for
+every file. Unknown pickle files remain blocked. GGUF files are accepted only
+through the native route; do not rename a GGUF or arbitrary INT4 model to
+`.safetensors`.
 
 ## Speed and memory
 
