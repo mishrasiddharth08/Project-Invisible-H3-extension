@@ -18,7 +18,7 @@ logger = logging.getLogger("forge_h3")
 
 OUTPUT_DEFAULTS = {
     "Still image": (1, 1, "ER SDE", "Simple", 1.0, 50, 1536, 1536),
-    "Video": (DEFAULT_FRAMES, 1, "Res Multistep", "Simple", 1.0, 20, 832, 480),
+    "Video": (DEFAULT_FRAMES, 1, "Res Multistep", "Simple", 1.0, 20, 1152, 768),
 }
 
 
@@ -158,8 +158,8 @@ class Panel:
                     updates[3] = gr.update(value="Simple")
                     updates[4] = gr.update(value=1.0)
                     updates[5] = gr.update(value=20)
-                    updates[6] = gr.update(value=832)
-                    updates[7] = gr.update(value=480)
+                    updates[6] = gr.update(value=OUTPUT_DEFAULTS["Video"][6])
+                    updates[7] = gr.update(value=OUTPUT_DEFAULTS["Video"][7])
             elif leaving:
                 updates = [gr.update(**config) for config in saved.get("native", [])]
                 saved.pop("native", None)

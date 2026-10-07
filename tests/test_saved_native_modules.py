@@ -23,3 +23,14 @@ class SavedNativeModulesTests(unittest.TestCase):
             p=types.SimpleNamespace(override_settings={'forge_additional_modules':['manual']})
             forge._normalize_request(p)
             self.assertEqual(p.override_settings['forge_additional_modules'],['manual'])
+
+    def test_explicit_empty_components_resolve_defaults(self):
+        modules=types.ModuleType('modules')
+        modules.shared=types.SimpleNamespace(opts=types.SimpleNamespace(forge_preset='H3',pi_h3_output='Video',sd_model_checkpoint='physical',forge_additional_modules=['valid-saved']))
+        modules.sd_models=types.SimpleNamespace(checkpoints_list={},checkpoint_aliases={})
+        with patch.dict(sys.modules,{'modules':modules}),patch.object(preset,'native_defaults',return_value=('physical',['int4','video','audio'])),patch.object(preset,'native_modules_valid',return_value=True):
+            for empty in ([],None):
+                with self.subTest(empty=empty):
+                    p=types.SimpleNamespace(override_settings={'forge_additional_modules':empty})
+                    forge._normalize_request(p)
+                    self.assertEqual(p.override_settings['forge_additional_modules'],['int4','video','audio'])

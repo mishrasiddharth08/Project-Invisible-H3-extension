@@ -1,6 +1,6 @@
 # Integration validation
 
-CPU validation of the unified extension: 128 main tests and 106 imported native-backend tests pass, 234 total. Tests cover the single H3 preset, Output precedence, legacy `H3 Video` API normalization, synthetic and physical checkpoint routing, GGUF still routing, native-script argument compatibility, sampler/scheduler choices, dimensions, step/CFG limits, batch controls, seed/prompt lists, LoRA parameters, memory modes, cancellation, frame grids, audio shift, FL2VA/Ref2VA references, compatibility gates and route isolation. Imported flow tests execute toy-size real tensor operations; they are not full-model GPU benchmarks.
+CPU validation of the unified extension: 129 main tests and 106 imported native-backend tests pass, 235 total. Tests cover the single H3 preset, Output precedence, legacy `H3 Video` API normalization, synthetic and physical checkpoint routing, GGUF still routing, native-script argument compatibility, sampler/scheduler choices, dimensions, step/CFG limits, batch controls, seed/prompt lists, LoRA parameters, memory modes, cancellation, frame grids, audio shift, FL2VA/Ref2VA references, compatibility gates and route isolation. Imported flow tests execute toy-size real tensor operations; they are not full-model GPU benchmarks.
 
 A separate Boogu regression suite passed 75 tests after its installed refresh-snapshot fix. It is reported separately because Boogu is not an H3 feature.
 
@@ -128,3 +128,37 @@ Detailed logs and generated samples are in the sibling development workspace
 ## Final UI and startup regressions
 
 The primary Output control stays visible in Video mode, remains open while switching, and saves the selected mode before component callbacks run. H3 repairs incompatible automatic video component sets while preserving explicit requests for validation. Concurrent checkpoint refreshes are serialized while H3 is selected; the LLaDA, SenseNova and Boogu registry readers received small snapshot fixes locally. Their portable patches are included under startup-fixes. Final UI captures use a CPU-only isolated Forge instance; earlier generation evidence used the RTX 5090.
+
+
+## Video quality correction
+
+The reported poor clips used **384 × 256, 4 steps and 22 frames**; one also used the incompatible NVFP4 native encoder. Those files are functional smoke tests, not quality examples. Native video rejects that encoder; use INT4 ConvRot, compatible INT8, or BF16.
+
+Video now starts at **1152 × 768**, matching upstream's recommended 768-pixel short side, with 20 steps, 124 frames, CFG 1, video Shift 12 and audio Shift 3. Higher resolution needs more processing time. An empty component override now correctly chooses the automatic H3 components.
+
+A new RTX 5090 run at these settings, seed 62026, completed in **335.82 seconds including loading**. Four sampled frames showed consistent facial features, visible freckles and finer detail than the tiny smoke clips. This is one inspected result, not a universal quality guarantee.
+
+![Actual H3 768p sample frames](docs/assets/video-quality-768p.png)
+
+[Watch the generated 5.17-second H3 sample](docs/assets/video-quality-768p.mp4). This example was generated with H3; no upscaling or sharpening was applied.
+
+
+### Adapter performance
+
+Native Forge can parse H3-compatible LoRA, LoHA, LoKr and DoRA weights when
+their tensor keys match the model. Only plain 2D LoRA uses H3's optimized
+quantized low-rank path. LoHA, LoKr, DoRA, LoCon/mid-weight, offset and
+transformed patches use Forge's compatibility path, which may dequantize
+weights each forward and require more time and VRAM. Full H3 GPU generation
+with LoHA, LoKr and DoRA files remains unverified; CPU fallback tests do not
+establish their full-model performance.
+
+### Measured video memory and time
+
+The 1152 x 768, 124-frame, 20-step RTX 5090 quality run took 335.82 seconds
+including loading. A single total-GPU-memory observation was 26,784 MiB
+(26.16 GiB); this was not peak telemetry or an isolated allocation measure.
+It used the INT8 ConvRot DiT and INT4 ConvRot encoder with Forge offloading.
+Speed and memory vary with dimensions, frames, components and adapters.
+The still worker's Memory mode and Keep model controls do not govern native
+video or GGUF; those routes use Forge memory management.

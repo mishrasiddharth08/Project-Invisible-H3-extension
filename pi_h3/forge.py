@@ -89,8 +89,9 @@ def _normalize_request(p, runner=None):
         item = sd_models.checkpoints_list.get(value) or sd_models.checkpoint_aliases.get(value)
         if (value == LABEL or getattr(item, '_pi_h3', False)) and checkpoint:
             overrides['sd_model_checkpoint'] = checkpoint
-        if ('forge_additional_modules' not in overrides
-                and not preset.native_modules_valid(getattr(shared.opts, 'forge_additional_modules', []) or [])):
+        if (('forge_additional_modules' in overrides and not overrides['forge_additional_modules'])
+                or ('forge_additional_modules' not in overrides
+                    and not preset.native_modules_valid(getattr(shared.opts, 'forge_additional_modules', []) or []))):
             overrides['forge_additional_modules'] = modules
 
 

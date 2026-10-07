@@ -1,7 +1,7 @@
 {
   "date": "2026-10-07",
   "cpu_tests": {
-    "extension": 128,
+    "extension": 129,
     "native": 106
   },
   "sampler_schedule_cases": 20,
@@ -48,5 +48,16 @@
     "W4A8",
     "Ref2VA",
     "FastH3"
-  ]
+  ],
+  "quality_sample": {
+    "width": 1152,
+    "height": 768,
+    "steps": 20,
+    "frames": 124,
+    "encoder": "INT4 ConvRot",
+    "wall_seconds": 335.82,
+    "seed": 62026,
+    "observed_total_gpu_mib": 26784,
+    "peak_measured": false
+  }
 }

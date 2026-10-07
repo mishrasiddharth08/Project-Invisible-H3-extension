@@ -57,7 +57,7 @@ smaller format slower.
 
 On the RTX 5090 test host, the current files loaded at approximately 20.00 GB
 for the DiT, 14.96 GB for the text encoder, and 4.97 GB for the VAE in separate
-stages. A 1536×2048 run reached about 31.9 GB total GPU use. Compare formats
+stages. Earlier large still-image runs do not establish a measured peak for this video test. Compare formats
 with the same prompt, seed, dimensions, steps, sampler, schedule and cold/warm
 state; record load-to-first-step time, steps/second, peak dedicated/shared GPU
 memory, final pixels and visual quality.
@@ -65,3 +65,24 @@ memory, final pixels and visual quality.
 Sources: `resources/catalog.json` at pinned Comfy-Org revision
 `bf92c4091e333e69b8ca1998e0a669f15cb0832b`, and the pinned backend files
 `comfy/quant_ops.py`, `comfy/ops.py`, and `comfy/sd.py`.
+
+
+### Adapter performance
+
+Native Forge can parse H3-compatible LoRA, LoHA, LoKr and DoRA weights when
+their tensor keys match the model. Only plain 2D LoRA uses H3's optimized
+quantized low-rank path. LoHA, LoKr, DoRA, LoCon/mid-weight, offset and
+transformed patches use Forge's compatibility path, which may dequantize
+weights each forward and require more time and VRAM. Full H3 GPU generation
+with LoHA, LoKr and DoRA files remains unverified; CPU fallback tests do not
+establish their full-model performance.
+
+### Measured video memory and time
+
+The 1152 x 768, 124-frame, 20-step RTX 5090 quality run took 335.82 seconds
+including loading. A single total-GPU-memory observation was 26,784 MiB
+(26.16 GiB); this was not peak telemetry or an isolated allocation measure.
+It used the INT8 ConvRot DiT and INT4 ConvRot encoder with Forge offloading.
+Speed and memory vary with dimensions, frames, components and adapters.
+The still worker's Memory mode and Keep model controls do not govern native
+video or GGUF; those routes use Forge memory management.

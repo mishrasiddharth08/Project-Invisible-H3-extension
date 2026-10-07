@@ -46,9 +46,10 @@ class Script(scripts.Script):
                         + ' · LoRA via `<lora:name:strength>`')
             with gr.Tabs(elem_id=f'pi_h3_{mode}_tabs'):
                 with gr.Tab('Memory'):
+                    gr.Markdown('These controls apply to the still-image worker. Native video and GGUF use Forge memory management.')
                     with gr.Row():
-                        memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Memory mode', elem_id=f'pi_h3_{mode}_memory')
-                        keep = gr.Checkbox(False, label='Keep model in memory', elem_id=f'pi_h3_{mode}_keep')
+                        memory = gr.Dropdown(['auto', 'lowvram', 'cpu'], value='auto', label='Still worker memory mode', elem_id=f'pi_h3_{mode}_memory')
+                        keep = gr.Checkbox(False, label='Keep still worker in memory', elem_id=f'pi_h3_{mode}_keep')
                     drift = gr.Checkbox(is_img2img, label='Pixel-drift fix: realign edits to the source image', elem_id=f'pi_h3_{mode}_drift')
                 with gr.Tab('Files'):
                     gr.Markdown('[Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3/tree/main) · place under `models/MiniMax-H3/` · **Generate never downloads**')

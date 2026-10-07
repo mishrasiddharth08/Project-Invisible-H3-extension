@@ -227,7 +227,7 @@ class UiReview(TestCase):
             checkpoint, modules, values = native_ui.output_selection('Video')
         self.assertEqual(checkpoint, 'H3 physical')
         self.assertEqual(modules, ['encoder-int4.safetensors', 'video-vae.safetensors', 'audio-vae.safetensors'])
-        self.assertEqual(values, (124, 1, 'Res Multistep', 'Simple', 1.0, 20, 832, 480))
+        self.assertEqual(values, (124, 1, 'Res Multistep', 'Simple', 1.0, 20, 1152, 768))
 
     def test_progress_adds_one_current_bar_and_labels_native_overall(self):
         text = (ROOT / 'javascript' / 'h3-progress.js').read_text(encoding='utf-8')
