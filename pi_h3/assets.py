@@ -93,9 +93,18 @@ def resolve(selection, role, inventory):
         choices = inventory[role]
         if not choices:
             raise ValueError(f'H3 {role} is missing. Open H3 controls → Models for download links and folder instructions.')
-        # Prefer community reference formats; user selections always win.
-        path = sorted(choices, key=lambda p: ('nvfp4_awq' not in p if role == 'clip' else 'int8_convrot' not in p,
-                                              'pruned' not in p, 'fl2va' not in p, p))[0]
+        if role == 'clip':
+            def encoder_rank(path):
+                name = Path(path).name.casefold().replace('-', '_')
+                return ('int8_convrot' not in name, 'int4_convrot' not in name,
+                        'bf16' not in name, path)
+
+            choices = [path for path in choices if 'nvfp4' not in Path(path).name.casefold()]
+            if not choices:
+                raise ValueError('H3 Auto needs an INT8 ConvRot, INT4 ConvRot or BF16 text encoder.')
+            path = min(choices, key=encoder_rank)
+        else:
+            path = min(choices, key=lambda p: ('int8_convrot' not in p, 'pruned' not in p, 'fl2va' not in p, p))
     tensors = header(path)
     required = {'dit': ('video_patch_proj.weight', 'audio_patch_proj.weight'),
                 'clip': ('visual.deepstack_merger_list.0.norm.weight', 'model.layers.49.self_attn.q_proj.weight'),
