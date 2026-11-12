@@ -27,9 +27,10 @@ def _effective_preset(preset):
 
 def _physical_h3_checkpoint():
     from modules import sd_models
+    from pi_h3_image.models import is_pruna_name
     choices = []
     for info in getattr(sd_models, 'checkpoints_list', {}).values():
-        if getattr(info, '_pi_h3', False):
+        if getattr(info, '_pi_h3', False) or is_pruna_name(info.filename):
             continue
         try:
             item = inspect_model(info.filename)
@@ -57,12 +58,13 @@ def checkpoint_info(value, preset=None, p=None):
 def native_selected(p=None):
     """True only for a physical H3 checkpoint owned by the native backend."""
     from modules import shared
+    from pi_h3_image.models import is_pruna_name
     overrides = getattr(p, "override_settings", {}) or {}
     preset = _effective_preset(overrides.get("forge_preset", getattr(shared.opts, "forge_preset", None)))
     if preset != PRESET:
         return False
     info = checkpoint_info(overrides.get("sd_model_checkpoint", shared.opts.sd_model_checkpoint), preset, p)
-    if info is None:
+    if info is None or is_pruna_name(info.filename):
         return False
     from pi_h3.forge import output_mode
     output = output_mode(p)

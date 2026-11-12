@@ -1,3 +1,15 @@
+# Native still-image preview
+
+MiniMax-H3-Image and Pruna P-H3-Image have published BF16, INT8 ConvRot and W4A8
+diffusion checkpoints. MiniMax's 32B encoder can use a compatible INT4 ConvRot
+file. Pruna has its own smaller text encoder and image VAE. The native image
+routes currently reject NVFP4 AWQ encoder files. The original H3 still worker's
+NVFP4 path remains available for its existing video-derived model.
+
+The new image backend uses Forge's quantized operations and file-backed
+offloading. Full-weight generation, adapter behavior and peak VRAM on the
+combined extension remain pending.
+
 # Unified native route
 
 H3 Video output uses Eduardo Abreu’s native Forge backend at revision 8ec38de. It implements GGUF diffusion models (Q2_K–Q8_0), W4A8, INT4 and INT8 formats supported by that backend and Forge. Native NVFP4-AWQ text encoding is explicitly rejected because upstream observed incorrect prompt conditioning. Use a compatible INT4, INT8 or BF16 encoder for the native route.

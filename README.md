@@ -9,7 +9,32 @@ Select **H3** under **UI Preset**, then use the normal **Generate** button.
 
 ![H3 quick guide: one preset, Still image or Video](docs/assets/h3-quick-guide.png)
 
-## New Forge Neo UI
+## MiniMax-H3-Image and P-H3-Image preview
+
+The `h3image` and `ph3` presets use Forge Neo's standard **txt2img**, **img2img**
+and **Generate** controls. The existing **H3** preset still uses the original
+FL2VA/Ref2VA checkpoints for stills and video.
+
+1. Update this extension and restart Forge Neo. The image presets require
+   comfy-kitchen 0.2.37 or newer and a compatible Forge Neo build.
+2. Download a checkpoint, encoder and image VAE from
+   [MiniMax-H3-Image](https://huggingface.co/Comfy-Org/MiniMax-H3-Image) or
+   [P-H3-Image](https://huggingface.co/PrunaAI/P-H3-Image-Comfy). Put them in
+   `models/Stable-diffusion`, `models/text_encoder`, and `models/VAE`,
+   respectively. Keep the official Pruna checkpoint filename for detection.
+3. Choose the matching preset and checkpoint, then select the encoder and VAE
+   under **VAE / Text Encoder**. W4A8 is the smallest published checkpoint option
+   for each image model. MiniMax's preset starts at six steps and Pruna's at eight.
+4. In **img2img**, add an input image. **Settings → MiniMax H3 → Enable Reference**
+   chooses prompt-based editing when enabled and normal denoising when disabled.
+
+Use **Batch Count** with **Batch Size** set to 1. Compatible LoRA tags use Forge's
+adapter loader, with an optimized low-rank path on supported quantized layers.
+LoKr uses Forge's standard adapter path and still needs H3 Image GPU validation.
+The new native image routes reject the NVFP4 AWQ encoder because of incorrect
+prompt conditioning in Forge. See [quantization notes](QUANTIZATION.md).
+
+## Original H3 preset
 
 Select **H3** once in **UI Preset**. Open the **H3** panel and choose **Still image** or **Video**. The switch selects the matching components and defaults, then you use the usual **Generate** and **Stop** buttons.
 
