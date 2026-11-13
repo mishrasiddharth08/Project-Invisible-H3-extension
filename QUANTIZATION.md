@@ -10,8 +10,9 @@ The new image backend uses Forge's quantized operations and file-backed
 offloading. Full-weight W4A8 generation passed for both image models on one
 RTX 5090, with MiniMax INT4 ConvRot encoding and Pruna W4A8 encoding. One
 MiniMax training LoRA loaded and generated successfully; LoKr remains unverified.
-See [measured results and remaining limitations](VALIDATION.md). Other published
-image checkpoint variants are not covered by these GPU results.
+See [measured results and remaining limitations](VALIDATION.md). Native MiniMax INT8 ConvRot also passed a 4096-square generation and
+identical-pixel warm repeat with the same INT4 encoder and FP16 image VAE.
+Other image checkpoint variants are not covered by these GPU results.
 
 # Unified native route
 

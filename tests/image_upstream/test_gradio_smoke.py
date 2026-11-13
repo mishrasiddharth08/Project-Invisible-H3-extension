@@ -68,11 +68,11 @@ class GradioSmoke(unittest.TestCase):
         for limit in limits:
             inactive = limit({}, 8192, 8192)
             self.assertNotIn("value", inactive[0])
-            for width, height in ((5312, 3008), (3008, 5312), (4000, 4000)):
+            for width, height in ((5472, 3040), (3040, 5472), (4096, 4096), (8192, 2048), (2048, 8192)):
                 unchanged = limit({"active": True}, width, height)
                 self.assertEqual([u["value"] for u in unchanged], [width, height])
             reduced = limit({"active": True}, 8192, 8192)
-            self.assertLessEqual(reduced[0]["value"] * reduced[1]["value"], 16_000_000)
+            self.assertLessEqual(reduced[0]["value"] * reduced[1]["value"], 16_777_216)
         for fn in handlers.values():
             with patch.object(ui, "checkpoint_info", return_value=types.SimpleNamespace(filename="model")):
                 with patch.object(ui, "inspect_model", return_value=types.SimpleNamespace(variant=H3_IMAGE)):
@@ -83,7 +83,7 @@ class GradioSmoke(unittest.TestCase):
                     item = None if variant is None else types.SimpleNamespace(variant=variant)
                     with patch.object(ui, "inspect_model", return_value=item):
                         unchanged = fn("model", {}, 1024, 1536)
-                        restored = fn("model", entered[0], 4000, 4000)
+                        restored = fn("model", entered[0], 4096, 4096)
                     self.assertNotIn("maximum", unchanged[1])
                     self.assertEqual(restored[1]["maximum"], 2048)
                     self.assertEqual(restored[2]["value"], 1536)

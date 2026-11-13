@@ -3,7 +3,8 @@
 ## 2026-11-13 (image preview)
 
 - Add MiniMax-H3-Image-only 32-grid dimension controls, up to 8192 per side
-  with a strict 16,000,000-pixel area cap and restoration for other models.
+  with a strict 16,777,216-pixel area cap and restoration for other models.
+  Raise the initial decimal 16 MP cap to permit the requested 4096-square output.
 - Match current Forge text-encoder loading, vision settings and Shift calls.
 - Keep Pruna image detection ahead of the legacy audio-layout fallback.
 - Honor per-request reference mode for ordinary img2img.

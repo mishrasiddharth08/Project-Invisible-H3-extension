@@ -4,8 +4,8 @@
 
 An isolated Forge Neo 2.32 instance on RTX 5090 (32 GB), 96 GB RAM, Torch
 2.13.0+cu130 and comfy-kitchen 0.2.41 preserved the existing user session.
-CPU regression suites pass 142 main, 110 native-backend and 135 image-backend
-tests (387 total). Official downloaded components were checked against their published byte lengths
+CPU regression suites pass 142 main, 110 native-backend and 136 image-backend
+tests (388 total). Official downloaded components were checked against their published byte lengths
 and SHA256 hashes. These are single-machine functional and visual checks, not
 universal performance or quality guarantees. Earlier evidence below is retained
 as history and does not establish coverage of the new image models.
@@ -19,6 +19,10 @@ Euler / P-H3-Image, eight steps and CFG 1. Seed was 62026 unless noted.
 | --- | --- | --- |
 | MiniMax 2048 x 2048 txt2img | Image generated and visually inspected | 35.39 s |
 | MiniMax 4000 x 4000 txt2img | Exact 16,000,000 pixels, visually inspected | 40.24 s |
+| MiniMax 4096 x 4096 portrait | 16,777,216 pixels, visually inspected; first request after server start | 85.65 s |
+| MiniMax 4096 x 4096 warm repeat | Same model/prompt retained; pixels identical to first request | 25.39 s |
+| MiniMax INT8 ConvRot 4096 x 4096 portrait | Same encoder/VAE/settings; visually inspected | 57.03 s |
+| MiniMax INT8 ConvRot 4096 x 4096 warm repeat | Pixels identical to its first request | 30.88 s |
 | MiniMax 5312 x 3008 landscape | Dimensions verified, visually inspected | 36.92 s |
 | MiniMax 3008 x 5312 portrait | Dimensions verified, visually inspected | 37.47 s |
 | MiniMax reference edit | Blue teapot changed to red, scene retained | 33.06 s |
@@ -39,15 +43,40 @@ Euler / P-H3-Image, eight steps and CFG 1. Seed was 62026 unless noted.
 Wall times include loading/offloading, conditioning and decoding, so rows are not
 controlled warm-start speed comparisons. One-second nvidia-smi samples measured
 **total-device** memory, including the desktop and other baseline residency,
-not a per-model allocator peak. Examples: MiniMax 4 MP 30,998 MiB, warm 16 MP
+not a per-model allocator peak. Examples: MiniMax 4 MP 30,998 MiB, 16 MP
 square 23,239 MiB, Pruna ordinary img2img 25,922 MiB, and full legacy video
 31,868 MiB. Lower figures in later runs do not prove better memory efficiency.
+
+The 4096-square warm repeat retained the model selection and identical prompt,
+using cached conditioning. Its sampled total-device peak was 17,336 MiB
+(first request: 18,580 MiB). The sampling progress log reached six steps at
+about 16 seconds; the full API-and-file-save measurement was 25.39 seconds.
+An authorized checkpoint download was active during both requests, so these
+are not controlled storage-performance measurements. The first request took
+85.65 seconds including loading; it must not be compared with the earlier
+teapot timing as a model-speed regression. No sampler or precision changes
+were made for the warm repeat, and matching output pixels were verified.
+
+A subsequent native INT8 ConvRot checkpoint test used the same portrait, seed,
+INT4 ConvRot encoder, FP16 image VAE and six-step settings. Its first and warm
+requests took 57.03 and 30.88 seconds, with sampled total-device peaks of
+18,829 and 18,958 MiB. Warm INT8 was about 22% slower than warm W4A8 for this
+one prompt and setup, with roughly 1.58 GiB higher sampled device residency;
+this is not a general speed/quality ranking. Both results were visually clean,
+with similar composition and differing details. INT8 used partial DiT residency
+(about 5.8 GiB offloaded), and its same-seed warm repeat matched its first
+request exactly. The download was complete before the INT8 tests.
 
 Live Gradio callbacks verified both tabs' 64-8192 / step-32 image ranges,
 landscape retention, 8192-square reduction to 8192 x 1952, and restoration of
 previous ranges and values when switching to legacy or an unrelated checkpoint.
 The limit is specific to MiniMax-H3-Image, not Pruna or the legacy routes.
-API requests above 16,000,000 pixels were rejected before inference. Batch Size
+These live results used the original 16,000,000-pixel cap. The preview now
+permits 16,777,216 pixels (4096 x 4096); CPU/UI regression coverage includes
+the new square limit, rectangular limits and other-model restoration. The
+4096-square portrait and warm repeat above validate the increased cap on this
+configuration, not all checkpoint variants.
+API requests above the original cap were rejected before inference. Batch Size
 2, hires fix, mismatched VAEs and native NVFP4 AWQ encoding were also rejected
 with clear errors (Forge reports these validation errors as HTTP 500).
 

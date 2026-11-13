@@ -19,8 +19,15 @@ class DimensionsTests(unittest.TestCase):
         _, updates = dimension_updates(False, {}, (2048, 1024), self.defaults)
         self.assertEqual(updates, [{}, {}])
 
+    def test_exact_cap_and_one_grid_step_over(self):
+        self.assertEqual(MAX_PIXELS, 4096 * 4096)
+        self.assertEqual(fit_dimensions(4096, 4128, changed=1), (4064, 4128))
+        self.assertEqual(fit_dimensions(4128, 4096, changed=0), (4128, 4064))
+        self.assertEqual(fit_dimensions(8192, 8192, changed=0), (8192, 2048))
+        self.assertEqual(fit_dimensions(8192, 8192), (4096, 4096))
+
     def test_grid_area_and_out_of_range_entry(self):
-        for pair in ((4000, 4000), (5312, 3008), (3008, 5312)):
+        for pair in ((4000, 4000), (4096, 4096), (5472, 3040), (3040, 5472), (8192, 2048), (2048, 8192)):
             self.assertEqual(fit_dimensions(*pair), pair)
             validate_dimensions("h3image", *pair)
         for pair in ((8192, 8192), (5472, 3072), (4096, 4096), (64, 8192)):
@@ -29,7 +36,7 @@ class DimensionsTests(unittest.TestCase):
                 self.assertLessEqual(w * h, MAX_PIXELS)
                 self.assertEqual((w % 32, h % 32), (0, 0))
         with self.assertRaises(H3Error):
-            validate_dimensions("h3image", 4096, 4096)
+            validate_dimensions("h3image", 4096, 4128)
         for other in ("ph3", "h3", "other"):
             validate_dimensions(other, 8192, 8192)
 

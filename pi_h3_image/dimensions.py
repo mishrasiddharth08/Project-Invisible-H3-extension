@@ -1,8 +1,8 @@
-"""Model-local 16,000,000-pixel slider range; no Forge imports or GPU work."""
+"""Model-local 16,777,216-pixel slider range; no Forge imports or GPU work."""
 import math
 from .contracts import GRID, MIN_SIDE, H3Error
 
-MAX_PIXELS = 16_000_000
+MAX_PIXELS = 16_777_216
 MAX_SIDE = 8192  # UI range, not an upstream per-axis support claim.
 
 def fit_dimensions(width, height, changed=None):
@@ -18,7 +18,7 @@ def fit_dimensions(width, height, changed=None):
 
 def validate_dimensions(profile_name, width, height):
     if profile_name == "h3image" and width * height > MAX_PIXELS:
-        raise H3Error("MiniMax-H3-Image output is limited to 16,000,000 pixels; reduce Width or Height.")
+        raise H3Error("MiniMax-H3-Image output is limited to 16,777,216 pixels; reduce Width or Height.")
 
 
 

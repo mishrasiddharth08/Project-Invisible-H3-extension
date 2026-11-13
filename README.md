@@ -29,16 +29,19 @@ FL2VA/Ref2VA checkpoints for stills and video.
    chooses prompt-based editing when enabled and normal denoising when disabled.
 
 For **MiniMax-H3-Image only**, the native Width and Height sliders in both tabs
-run from 64 to 8192 in steps of 32, with a separate strict **16,000,000-pixel**
-area limit. For example, use **4000 x 4000**, **5312 x 3008**, or **3008 x 5312**.
+run from 64 to 8192 in steps of 32, with a separate strict **16,777,216-pixel**
+area limit. For example, use **4096 x 4096**, **5472 x 3040**, or **3040 x 5472**.
 When an edit exceeds the area limit, the other side is reduced to the nearest
 lower grid value. Oversized generation requests are rejected before inference.
 Switching away restores the previous slider ranges and values. P-H3-Image,
 the original H3 still/video routes and other models keep their own controls.
 [MiniMax's size guide](https://github.com/MiniMax-AI/MiniMax-H3-Image#sizes)
-recommends roughly 16 MP and multiples of 32; its examples exceed our strict
-decimal 16 MP cap. The 8192 slider range is not an upstream per-axis guarantee.
-Full-model W4A8 generation passed at all three example sizes on one RTX 5090.
+recommends roughly 16 MP and multiples of 32. The requested cap now permits
+4096 x 4096 (16.78 decimal MP); the 8192 slider range is not an upstream
+per-axis guarantee. Earlier full-model W4A8 generation passed at 4000 x 4000,
+5312 x 3008 and 3008 x 5312 on one RTX 5090. A subsequent
+4096-square portrait and identical-pixel warm repeat also passed on this setup,
+with both W4A8 and INT8 ConvRot diffusion checkpoints.
 This is not a guarantee for every shape or GPU; see [test results](VALIDATION.md).
 Pruna reference quality is mixed: one source/seed produced severe posterization,
 while another seed and a second source edited cleanly. Ordinary img2img passed.
