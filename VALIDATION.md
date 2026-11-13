@@ -56,9 +56,28 @@ configuration layout; current Shift call arguments; Pruna being intercepted by
 the older audio-layout detector; per-request reference disabling; and dimension
 restoration when an unrelated checkpoint has no H3 classification.
 
-The preview remains a draft. Pruna reference editing is **not accepted** based
-on the failed visual check; comparison with current official ComfyUI did not
-establish a safe source-level correction. Do not infer quality from HTTP 200.
+### Focused Pruna reference diagnosis
+
+All follow-up generations ran directly in isolated Forge Neo, not ComfyUI.
+The original 3872 x 2176 source at seed 62026 remained posterized with PyTorch
+attention (54.77 s) and with FP32 VAE storage (61.07 s). A 1312 x 736 copy of
+that reference reduced but did not remove the excessive contrast (27.33 s).
+However, the original source at seed **62027** edited cleanly (51.93 s), as did
+a different 2048 x 2048 source at seed 62026 (39.25 s), both at 3872 x 2176 output.
+These are mixed, input- and seed-sensitive quality results, not a universally
+broken reference route or a verified general fix.
+
+Acceptance-only branch isolation produced a clean vision-only edit (29.49 s)
+and a posterized latent-only edit (51.06 s). A no-denoise VAE roundtrip was
+visually clean (25.83 s). The diagnostic instrumentation was then removed;
+disabling reference latents is not shipped as a workaround. The Pruna VAE's
+encoder tensors are unquantized FP32 in the file. Source comparison and an
+actual-weight CPU check found no reference scaling, timestep, or two-row
+adaLN indexing mismatch. Those checks do not establish full runtime parity.
+
+The preview remains a draft. Broad Pruna reference quality is **not accepted**;
+no safe source-level correction has been established. Do not infer quality
+from HTTP 200 or cherry-pick the successful seed as a general guarantee.
 One MiniMax training adapter proves loading compatibility, not style fidelity.
 LoKr, additional image quantization variants, Ref2VA/GGUF/FastH3 GPU runs,
 multi-reference quality, broad prompt coverage and a complete interactive

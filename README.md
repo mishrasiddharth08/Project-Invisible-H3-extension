@@ -40,8 +40,9 @@ recommends roughly 16 MP and multiples of 32; its examples exceed our strict
 decimal 16 MP cap. The 8192 slider range is not an upstream per-axis guarantee.
 Full-model W4A8 generation passed at all three example sizes on one RTX 5090.
 This is not a guarantee for every shape or GPU; see [test results](VALIDATION.md).
-Pruna reference editing remains a preview limitation: one tested edit produced
-severe posterization despite a successful API response. Ordinary img2img passed.
+Pruna reference quality is mixed: one source/seed produced severe posterization,
+while another seed and a second source edited cleanly. Ordinary img2img passed.
+Changing the attention backend or using FP32 VAE did not fix the failing case.
 
 Use **Batch Count** with **Batch Size** set to 1. Compatible LoRA tags use Forge's
 adapter loader, with an optimized low-rank path on supported quantized layers.
