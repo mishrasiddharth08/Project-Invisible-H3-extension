@@ -24,6 +24,13 @@ Copied package: forge_h3/. Local bridge: scripts/native_h3.py.
 Upstream license: licenses/EDUARDO-H3-AGPL-3.0.txt.
 Upstream validation is retained as documentation, not local GPU proof.
 
+Native MiniMax-H3-Image and P-H3-Image backend (AGPL-3.0)
+https://github.com/aoleg/pruna-P-H3-Image-forge-neo
+Revision 4de21f0a711deb506e416883b9f6e78f8c1b1535.
+Adapted package: pi_h3_image/. Forge bridge: scripts/h3_image.py.
+Adapted tests: tests/image_upstream/.
+License: pi_h3_image/LICENSE.upstream-AGPL-3.0.txt.
+
 Design inspiration: AiWithYou / AiKimi Forge Neo
 https://github.com/AiWithYou/aikimi-forge-neo
 Revision 1ebd2454ba424fb08fe666c5e494d8eb189fe935.

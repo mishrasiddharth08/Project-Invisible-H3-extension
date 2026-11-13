@@ -1,5 +1,17 @@
 # Changes
 
+## 2026-11-13 (image preview)
+
+- Add MiniMax-H3-Image-only 32-grid dimension controls, up to 8192 per side
+  with a strict 16,777,216-pixel area cap and restoration for other models.
+  Raise the initial decimal 16 MP cap to permit the requested 4096-square output.
+- Match current Forge text-encoder loading, vision settings and Shift calls.
+- Keep Pruna image detection ahead of the legacy audio-layout fallback.
+- Honor per-request reference mode for ordinary img2img.
+- Validate native image, Pruna and legacy still/video routes in an isolated
+  Forge Neo 2.32 session; retain the draft while Pruna reference quality is unresolved.
+- Record measured settings, timings, negative tests and remaining gaps in VALIDATION.md.
+
 ## 2026-10-07
 
 - Start video at 1152 x 768, 20 steps and 124 frames.

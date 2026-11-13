@@ -9,7 +9,51 @@ Select **H3** under **UI Preset**, then use the normal **Generate** button.
 
 ![H3 quick guide: one preset, Still image or Video](docs/assets/h3-quick-guide.png)
 
-## New Forge Neo UI
+## MiniMax-H3-Image and P-H3-Image preview
+
+The `h3image` and `ph3` presets use Forge Neo's standard **txt2img**, **img2img**
+and **Generate** controls. The existing **H3** preset still uses the original
+FL2VA/Ref2VA checkpoints for stills and video.
+
+1. Update this extension and restart Forge Neo. The image presets require
+   comfy-kitchen 0.2.37 or newer and a compatible Forge Neo build.
+2. Download a checkpoint, encoder and image VAE from
+   [MiniMax-H3-Image](https://huggingface.co/Comfy-Org/MiniMax-H3-Image) or
+   [P-H3-Image](https://huggingface.co/PrunaAI/P-H3-Image-Comfy). Put them in
+   `models/Stable-diffusion`, `models/text_encoder`, and `models/VAE`,
+   respectively. Keep the official Pruna checkpoint filename for detection.
+3. Choose the matching preset and checkpoint, then select the encoder and VAE
+   under **VAE / Text Encoder**. W4A8 is the smallest published checkpoint option
+   for each image model. MiniMax's preset starts at six steps and Pruna's at eight.
+4. In **img2img**, add an input image. **Settings → MiniMax H3 → Enable Reference**
+   chooses prompt-based editing when enabled and normal denoising when disabled.
+
+For **MiniMax-H3-Image only**, the native Width and Height sliders in both tabs
+run from 64 to 8192 in steps of 32, with a separate strict **16,777,216-pixel**
+area limit. For example, use **4096 x 4096**, **5472 x 3040**, or **3040 x 5472**.
+When an edit exceeds the area limit, the other side is reduced to the nearest
+lower grid value. Oversized generation requests are rejected before inference.
+Switching away restores the previous slider ranges and values. P-H3-Image,
+the original H3 still/video routes and other models keep their own controls.
+[MiniMax's size guide](https://github.com/MiniMax-AI/MiniMax-H3-Image#sizes)
+recommends roughly 16 MP and multiples of 32. The requested cap now permits
+4096 x 4096 (16.78 decimal MP); the 8192 slider range is not an upstream
+per-axis guarantee. Earlier full-model W4A8 generation passed at 4000 x 4000,
+5312 x 3008 and 3008 x 5312 on one RTX 5090. A subsequent
+4096-square portrait and identical-pixel warm repeat also passed on this setup,
+with both W4A8 and INT8 ConvRot diffusion checkpoints.
+This is not a guarantee for every shape or GPU; see [test results](VALIDATION.md).
+Pruna reference quality is mixed: one source/seed produced severe posterization,
+while another seed and a second source edited cleanly. Ordinary img2img passed.
+Changing the attention backend or using FP32 VAE did not fix the failing case.
+
+Use **Batch Count** with **Batch Size** set to 1. Compatible LoRA tags use Forge's
+adapter loader, with an optimized low-rank path on supported quantized layers.
+LoKr uses Forge's standard adapter path and still needs H3 Image GPU validation.
+The new native image routes reject the NVFP4 AWQ encoder because of incorrect
+prompt conditioning in Forge. See [quantization notes](QUANTIZATION.md).
+
+## Original H3 preset
 
 Select **H3** once in **UI Preset**. Open the **H3** panel and choose **Still image** or **Video**. The switch selects the matching components and defaults, then you use the usual **Generate** and **Stop** buttons.
 
