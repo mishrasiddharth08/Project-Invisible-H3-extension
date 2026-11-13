@@ -47,6 +47,47 @@ class GradioSmoke(unittest.TestCase):
         self.assertEqual(len({id(fn.fn) for fn in demo.fns.values()
                               if getattr(fn.fn, "__name__", "") == "update"}), 2)
 
+    def test_native_image_dimensions_only_and_restore(self):
+        import gradio as gr
+        from pi_h3_image import ui
+        from pi_h3_image.models import H3_IMAGE, PH3_IMAGE, H3
+        ui.reset()
+        self.addCleanup(ui.reset)
+        with gr.Blocks() as demo:
+            ui.capture(gr.Dropdown(["model"], elem_id="setting_sd_model_checkpoint"))
+            for tab in ("txt2img", "img2img"):
+                ui.Panel(tab == "img2img")
+                ui.capture(gr.Slider(64, 2048, value=1024, step=8, elem_id=f"{tab}_width"))
+                ui.capture(gr.Slider(64, 2048, value=1536, step=8, elem_id=f"{tab}_height"))
+        self.assertTrue(all(p.dimension_bound for p in ui.PANELS))
+        handlers = {id(f.fn): f.fn for f in demo.fns.values()
+                    if getattr(f.fn, "__name__", "") == "dimensions_update"}
+        self.assertEqual(len(handlers), 2)
+        limits = [f.fn for f in demo.fns.values() if getattr(f.fn, "__name__", "") == "limit"]
+        self.assertEqual(len(limits), 4)
+        for limit in limits:
+            inactive = limit({}, 8192, 8192)
+            self.assertNotIn("value", inactive[0])
+            for width, height in ((5312, 3008), (3008, 5312), (4000, 4000)):
+                unchanged = limit({"active": True}, width, height)
+                self.assertEqual([u["value"] for u in unchanged], [width, height])
+            reduced = limit({"active": True}, 8192, 8192)
+            self.assertLessEqual(reduced[0]["value"] * reduced[1]["value"], 16_000_000)
+        for fn in handlers.values():
+            with patch.object(ui, "checkpoint_info", return_value=types.SimpleNamespace(filename="model")):
+                with patch.object(ui, "inspect_model", return_value=types.SimpleNamespace(variant=H3_IMAGE)):
+                    entered = fn("model", {}, 1024, 1536)
+                self.assertEqual(entered[1]["maximum"], 8192)
+                self.assertEqual(entered[2]["step"], 32)
+                for variant in (PH3_IMAGE, H3, "other", None):
+                    item = None if variant is None else types.SimpleNamespace(variant=variant)
+                    with patch.object(ui, "inspect_model", return_value=item):
+                        unchanged = fn("model", {}, 1024, 1536)
+                        restored = fn("model", entered[0], 4000, 4000)
+                    self.assertNotIn("maximum", unchanged[1])
+                    self.assertEqual(restored[1]["maximum"], 2048)
+                    self.assertEqual(restored[2]["value"], 1536)
+
     def test_the_panel_has_no_generation_inputs(self):
         import gradio as gr
 

@@ -31,6 +31,8 @@ def capture(component, **kwargs):
         COMPONENTS[elem_id] = component
         if elem_id in ("setting_sd_model_checkpoint", "setting_sd_modules", "forge_ui_preset"):
             bind_all(elem_id)
+        for panel in PANELS:
+            panel.bind_dimensions()
 
 
 class Panel:
@@ -41,7 +43,7 @@ class Panel:
         with gr.Group(visible=False, elem_id=f"{self.tab}_pi_h3_image_status") as self.accordion:
             self.status = gr.Markdown("Select the H3 text encoder and VAE in VAE / Text Encoder.")
             if is_img2img:
-                gr.Markdown("With **[H3] Enable Reference** on (Settings → MiniMax H3), img2img is an **edit** with "
+                gr.Markdown("With **[H3] Enable Reference** on (Settings â†’ MiniMax H3), img2img is an **edit** with "
                             "MiniMax-H3-Image or P-H3-Image: the input image is `<Picture 1>`, the picture to edit; the "
                             "**ImageStitch Integrated** gallery holds the references, `<Picture 2>` onwards (16 pictures "
                             "in all for MiniMax-H3-Image, 8 for P-H3-Image). Name them in the prompt (\"the hat from "
@@ -50,9 +52,56 @@ class Panel:
                             "noised at Denoising strength, with either model.")
             with gr.Accordion("Components", open=False):
                 self.summary = gr.Markdown("")
+        self.dimension_bound = False
+        self.dimension_saved = gr.State({"active": False})
         self.bound = False
         self.attempts = []
         PANELS.append(self)
+
+    def bind_dimensions(self):
+        """Limit this override to native MiniMax-H3-Image; never change Forge globally."""
+        if self.dimension_bound or not _in_blocks():
+            return
+        ids = [f"{self.tab}_{side}" for side in ("width", "height")]
+        if any(key not in COMPONENTS for key in ids + ["setting_sd_model_checkpoint"]):
+            return
+        sliders = [COMPONENTS[key] for key in ids]
+        defaults = [{key: getattr(c, key) for key in ("minimum", "maximum", "step")}
+                    for c in sliders]
+        checkpoint = COMPONENTS["setting_sd_model_checkpoint"]
+
+        def dimensions_update(value, saved, width, height):
+            from .dimensions import dimension_updates
+            from .models import H3_IMAGE as IMAGE_VARIANT
+            info = checkpoint_info(value)
+            active = False
+            if info:
+                try:
+                    item = inspect_model(info.filename)
+                    active = item is not None and item.variant == IMAGE_VARIANT
+                except H3Error:
+                    pass
+            state, updates = dimension_updates(active, saved, (width, height), defaults)
+            return [state] + [gr.update(**update) for update in updates]
+
+        inputs = [checkpoint, self.dimension_saved] + sliders
+        outputs = [self.dimension_saved] + sliders
+        checkpoint.change(dimensions_update, inputs=inputs, outputs=outputs, queue=False, show_progress=False)
+        gr.context.Context.root_block.load(dimensions_update, inputs=inputs, outputs=outputs,
+                                          queue=False, show_progress=False)
+        def limit_dimensions(axis):
+            def limit(saved, width, height):
+                from .dimensions import fit_dimensions
+                if not saved or not saved.get("active"):
+                    return [gr.update(), gr.update()]
+                return [gr.update(value=v) for v in fit_dimensions(width, height, axis)]
+            return limit
+
+        # input fires on user edits only, so correction outputs cannot trigger a loop.
+        for axis, slider in enumerate(sliders):
+            slider.input(limit_dimensions(axis), inputs=[self.dimension_saved] + sliders,
+                         outputs=sliders, queue=False, show_progress=False)
+        self.dimension_bound = True
 
     @property
     def inputs(self):
@@ -185,6 +234,7 @@ def hidden_updates(count, active, leaving):
 def bind_all(trigger="ui_tabs"):
     for panel in PANELS:
         panel.bind(trigger)
+        panel.bind_dimensions()
     return []
 
 

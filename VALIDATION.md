@@ -1,5 +1,71 @@
 # Integration validation
 
+## Image preview acceptance - November 13, 2026
+
+An isolated Forge Neo 2.32 instance on RTX 5090 (32 GB), 96 GB RAM, Torch
+2.13.0+cu130 and comfy-kitchen 0.2.41 preserved the existing user session.
+CPU regression suites pass 142 main, 110 native-backend and 135 image-backend
+tests (387 total). Official downloaded components were checked against their published byte lengths
+and SHA256 hashes. These are single-machine functional and visual checks, not
+universal performance or quality guarantees. Earlier evidence below is retained
+as history and does not establish coverage of the new image models.
+
+MiniMax-H3-Image used its pruned W4A8 checkpoint, compatible Qwen3-VL-32B INT4
+ConvRot encoder, FP16 image VAE, H3-Image LCM / Simple, six steps and CFG 1.
+Pruna used its own W4A8 checkpoint and encoder, INT8 ConvRot image VAE,
+Euler / P-H3-Image, eight steps and CFG 1. Seed was 62026 unless noted.
+
+| Request | Result | Wall time |
+| --- | --- | --- |
+| MiniMax 2048 x 2048 txt2img | Image generated and visually inspected | 35.39 s |
+| MiniMax 4000 x 4000 txt2img | Exact 16,000,000 pixels, visually inspected | 40.24 s |
+| MiniMax 5312 x 3008 landscape | Dimensions verified, visually inspected | 36.92 s |
+| MiniMax 3008 x 5312 portrait | Dimensions verified, visually inspected | 37.47 s |
+| MiniMax reference edit | Blue teapot changed to red, scene retained | 33.06 s |
+| MiniMax ordinary img2img | Denoising 0.5 honored, no reference mode | 22.04 s |
+| MiniMax training LoRA | Adapter loaded, image generated | 24.54 s |
+| MiniMax Batch Count 2 | Seeds 62026 and 62027; same-seed pixels match baseline after adapter removal | 40.90 s |
+| Pruna 3872 x 2176 txt2img | Image generated and visually inspected | 38.11 s |
+| Pruna ordinary img2img | Denoising 0.5, visually inspected | 30.36 s |
+| Pruna reference edit | HTTP 200 but severe posterization: quality failure | 51.38 s |
+| Pruna Stop during sampling | Request interrupted; Forge returned one partial image | 16.71 s |
+| Pruna recovery after Stop | Same-seed pixels exactly match baseline | 24.35 s |
+| Legacy dedicated still worker | 384 x 256, two-step functional smoke | 117.25 s |
+| Legacy native audio video | 1152 x 768, 22 frames, 20 steps | 38.05 s |
+| Legacy full audio video | 1152 x 768, 124 frames, 20 steps; MP4 verified | 1238.92 s |
+| Legacy Turbo silent video | 384 x 256, 22 frames, four steps and existing Turbo LoRA | 29.51 s |
+| Legacy regression after detection fix | Audio video, 384 x 256, 22 frames, four steps | 59.50 s |
+
+Wall times include loading/offloading, conditioning and decoding, so rows are not
+controlled warm-start speed comparisons. One-second nvidia-smi samples measured
+**total-device** memory, including the desktop and other baseline residency,
+not a per-model allocator peak. Examples: MiniMax 4 MP 30,998 MiB, warm 16 MP
+square 23,239 MiB, Pruna ordinary img2img 25,922 MiB, and full legacy video
+31,868 MiB. Lower figures in later runs do not prove better memory efficiency.
+
+Live Gradio callbacks verified both tabs' 64-8192 / step-32 image ranges,
+landscape retention, 8192-square reduction to 8192 x 1952, and restoration of
+previous ranges and values when switching to legacy or an unrelated checkpoint.
+The limit is specific to MiniMax-H3-Image, not Pruna or the legacy routes.
+API requests above 16,000,000 pixels were rejected before inference. Batch Size
+2, hires fix, mismatched VAEs and native NVFP4 AWQ encoding were also rejected
+with clear errors (Forge reports these validation errors as HTTP 500).
+
+Fixed during this pass: current Forge loader keyword compatibility and vision
+configuration layout; current Shift call arguments; Pruna being intercepted by
+the older audio-layout detector; per-request reference disabling; and dimension
+restoration when an unrelated checkpoint has no H3 classification.
+
+The preview remains a draft. Pruna reference editing is **not accepted** based
+on the failed visual check; comparison with current official ComfyUI did not
+establish a safe source-level correction. Do not infer quality from HTTP 200.
+One MiniMax training adapter proves loading compatibility, not style fidelity.
+LoKr, additional image quantization variants, Ref2VA/GGUF/FastH3 GPU runs,
+multi-reference quality, broad prompt coverage and a complete interactive
+browser walkthrough remain unverified. No claim of exhaustive testing is made.
+
+## Earlier integration evidence
+
 CPU validation of the unified extension: 138 main tests and 107 imported native-backend tests pass, 245 total. Tests cover the single H3 preset, Output precedence, legacy `H3 Video` API normalization, synthetic and physical checkpoint routing, GGUF still routing, native-script argument compatibility, sampler/scheduler choices, dimensions, step/CFG limits, batch controls, seed/prompt lists, LoRA parameters, memory modes, cancellation, frame grids, audio shift, FL2VA/Ref2VA references, compatibility gates and route isolation. Imported flow tests execute toy-size real tensor operations; they are not full-model GPU benchmarks.
 
 A separate Boogu regression suite passed 75 tests after its installed refresh-snapshot fix. It is reported separately because Boogu is not an H3 feature.

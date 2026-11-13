@@ -92,11 +92,12 @@ OUTPUT_SCALES = {"1": Fraction(1), "3/4": Fraction(3, 4), "2/3": Fraction(2, 3),
                  "1/4": Fraction(1, 4)}
 
 
-def reference_mode() -> bool:
+def reference_mode(p=None) -> bool:
     """The [H3] Enable Reference setting (Forge's klein_do_reference and the like): on, img2img is an edit with the
     input image as <Picture 1>; off, img2img is Forge's standard one, the input image noised at Denoising strength."""
     from modules import shared
-    return bool(getattr(shared.opts, REFERENCE_SETTING, True))
+    overrides = getattr(p, "override_settings", {}) or {}
+    return bool(overrides.get(REFERENCE_SETTING, getattr(shared.opts, REFERENCE_SETTING, True)))
 
 
 def output_scale() -> tuple[str, Fraction]:
@@ -164,11 +165,13 @@ def _before_process(p):
     components = resolve_components(info.filename, module_paths(overrides.get("forge_additional_modules", shared.opts.forge_additional_modules)))
     note_precision_flags(components)
     profile = components.profile
+    from .dimensions import validate_dimensions
+    validate_dimensions(profile.name, p.width, p.height)
     refs, vision = [], []
     p.pi_h3_image_standard_img2img = False
     detail = ""
     if isinstance(p, processing.StableDiffusionProcessingImg2Img):
-        reference = reference_mode()
+        reference = reference_mode(p)
         validate_img2img(p, components, reference)
         if reference:
             # the original pictures, sized for the VAE and for the text encoder as the model's ComfyUI node does

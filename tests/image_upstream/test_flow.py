@@ -316,6 +316,16 @@ class FlowTests(unittest.TestCase):
         with self.assertRaisesRegex(H3Error, "up to 8 pictures"):
             integration.before_process(Img2Img(gallery=[Image.new("RGB", (32, 32))] * 8))
 
+    def test_request_override_disables_reference_before_options_are_applied(self):
+        sys.modules["modules.shared"].opts.h3_do_reference = True
+        p = Img2Img()
+        p.override_settings["h3_do_reference"] = False
+        self.run_until_sampling(p)
+        self.assertTrue(p.pi_h3_image_standard_img2img)
+        self.assertEqual(p.pi_h3_image_request.references, 0)
+        self.assertEqual(p.denoising_strength, 0.75)
+        self.assertTrue(sys.modules["modules.shared"].opts.h3_do_reference)
+
     def test_with_reference_off_img2img_is_forges_own(self):
         sys.modules["modules.shared"].opts.h3_do_reference = False
         for repeat in (False, True):

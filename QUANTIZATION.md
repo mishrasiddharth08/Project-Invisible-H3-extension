@@ -7,8 +7,11 @@ routes currently reject NVFP4 AWQ encoder files. The original H3 still worker's
 NVFP4 path remains available for its existing video-derived model.
 
 The new image backend uses Forge's quantized operations and file-backed
-offloading. Full-weight generation, adapter behavior and peak VRAM on the
-combined extension remain pending.
+offloading. Full-weight W4A8 generation passed for both image models on one
+RTX 5090, with MiniMax INT4 ConvRot encoding and Pruna W4A8 encoding. One
+MiniMax training LoRA loaded and generated successfully; LoKr remains unverified.
+See [measured results and remaining limitations](VALIDATION.md). Other published
+image checkpoint variants are not covered by these GPU results.
 
 # Unified native route
 

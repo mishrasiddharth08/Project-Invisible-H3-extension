@@ -66,10 +66,12 @@ def _hook_detection() -> None:
     original = detection.detect_unet_config
 
     def detect_unet_config(state_dict, key_prefix, *args, **kwargs):
-        dit_config = model.detect(state_dict, key_prefix)
+        # The native image detector carries filename-scoped Pruna context. Give
+        # that more specific route first refusal before claiming an audio-layout H3.
+        dit_config = original(state_dict, key_prefix, *args, **kwargs)
         if dit_config is not None:
             return dit_config
-        return original(state_dict, key_prefix, *args, **kwargs)
+        return model.detect(state_dict, key_prefix)
 
     detection.detect_unet_config = detect_unet_config
 
