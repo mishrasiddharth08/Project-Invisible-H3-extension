@@ -63,16 +63,10 @@ class GradioSmoke(unittest.TestCase):
         handlers = {id(f.fn): f.fn for f in demo.fns.values()
                     if getattr(f.fn, "__name__", "") == "dimensions_update"}
         self.assertEqual(len(handlers), 2)
-        limits = [f.fn for f in demo.fns.values() if getattr(f.fn, "__name__", "") == "limit"]
-        self.assertEqual(len(limits), 4)
-        for limit in limits:
-            inactive = limit({}, 8192, 8192)
-            self.assertNotIn("value", inactive[0])
-            for width, height in ((5472, 3040), (3040, 5472), (4096, 4096), (8192, 2048), (2048, 8192)):
-                unchanged = limit({"active": True}, width, height)
-                self.assertEqual([u["value"] for u in unchanged], [width, height])
-            reduced = limit({"active": True}, 8192, 8192)
-            self.assertLessEqual(reduced[0]["value"] * reduced[1]["value"], 16_777_216)
+        slider_ids = {ui.COMPONENTS[f"{tab}_{side}"]._id
+                      for tab in ("txt2img", "img2img") for side in ("width", "height")}
+        for dependency in demo.config["dependencies"]:
+            self.assertTrue(slider_ids.isdisjoint(target[0] for target in dependency["targets"]))
         for fn in handlers.values():
             with patch.object(ui, "checkpoint_info", return_value=types.SimpleNamespace(filename="model")):
                 with patch.object(ui, "inspect_model", return_value=types.SimpleNamespace(variant=H3_IMAGE)):

@@ -89,18 +89,6 @@ class Panel:
         checkpoint.change(dimensions_update, inputs=inputs, outputs=outputs, queue=False, show_progress=False)
         gr.context.Context.root_block.load(dimensions_update, inputs=inputs, outputs=outputs,
                                           queue=False, show_progress=False)
-        def limit_dimensions(axis):
-            def limit(saved, width, height):
-                from .dimensions import fit_dimensions
-                if not saved or not saved.get("active"):
-                    return [gr.update(), gr.update()]
-                return [gr.update(value=v) for v in fit_dimensions(width, height, axis)]
-            return limit
-
-        # input fires on user edits only, so correction outputs cannot trigger a loop.
-        for axis, slider in enumerate(sliders):
-            slider.input(limit_dimensions(axis), inputs=[self.dimension_saved] + sliders,
-                         outputs=sliders, queue=False, show_progress=False)
         self.dimension_bound = True
 
     @property

@@ -31,8 +31,8 @@ FL2VA/Ref2VA checkpoints for stills and video.
 For **MiniMax-H3-Image only**, the native Width and Height sliders in both tabs
 run from 64 to 8192 in steps of 32, with a separate strict **16,777,216-pixel**
 area limit. For example, use **4096 x 4096**, **5472 x 3040**, or **3040 x 5472**.
-When an edit exceeds the area limit, the other side is reduced to the nearest
-lower grid value. Oversized generation requests are rejected before inference.
+Width and Height can be edited independently. Forge checks the area limit
+when you click Generate and asks you to reduce a dimension if needed.
 Switching away restores the previous slider ranges and values. P-H3-Image,
 the original H3 still/video routes and other models keep their own controls.
 [MiniMax's size guide](https://github.com/MiniMax-AI/MiniMax-H3-Image#sizes)
