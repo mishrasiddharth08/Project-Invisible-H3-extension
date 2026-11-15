@@ -5,6 +5,33 @@ Select **H3** under **UI Preset**, then use the normal **Generate** button.
 
 [Project page](https://mishrasiddharth08.github.io/Project-Invisible-H3-extension/) · [Test results](VALIDATION.md) · [Quantization support](QUANTIZATION.md)
 
+## MiniMax-H3-Image and P-H3-Image preview
+
+Native MiniMax-H3-Image and Pruna P-H3-Image are available in the
+[preview branch](https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/tree/codex/h3-image-preview),
+with setup and validation in [draft PR #2](https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/pull/2).
+**This preview is not yet merged into main.** The installation instructions
+below still describe the original H3 still/video release.
+
+The preview uses Forge Neo's normal **txt2img**, **img2img**, **Generate** and
+**Stop** controls, while preserving the original video-weight still and video
+routes. MiniMax-H3-Image-only Width and Height controls use a 32-pixel grid and
+a **16,777,216-pixel area cap**, allowing **4096 × 4096** (16.78 decimal MP).
+The slider's 8192 per-axis range is not a guarantee for every shape or GPU.
+
+On one RTX 5090, native W4A8 and INT8 ConvRot checkpoints both completed
+4096 × 4096 generation. At six steps, their warm repeats took **25.39 seconds**
+and **30.88 seconds**, respectively, with the same INT4 encoder and FP16 image
+VAE. These are single-prompt measurements, not universal benchmarks.
+[See exact settings and validation](https://github.com/mishrasiddharth08/Project-Invisible-H3-extension/blob/codex/h3-image-preview/VALIDATION.md).
+
+Ordinary img2img, MiniMax reference editing, one compatible LoRA and legacy
+still/video regressions were exercised. **H3 Image LoKr remains unverified**:
+a compatible LoKr test file is still needed. Pruna reference editing remains
+input- and seed-sensitive, with posterization in one tested case; no general
+fix is claimed. Other image quantization variants are not all GPU-validated,
+and native NVFP4 AWQ prompt conditioning remains disabled.
+
 ## H3 quick guide
 
 ![H3 quick guide: one preset, Still image or Video](docs/assets/h3-quick-guide.png)
