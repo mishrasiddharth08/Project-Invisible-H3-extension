@@ -29,16 +29,20 @@ FL2VA/Ref2VA checkpoints for stills and video.
    chooses prompt-based editing when enabled and normal denoising when disabled.
 
 For **MiniMax-H3-Image only**, the native Width and Height sliders in both tabs
-run from 64 to 8192 in steps of 32, with a separate strict **16,777,216-pixel**
-area limit. For example, use **4096 x 4096**, **5472 x 3040**, or **3040 x 5472**.
+run from 64 to 4096 in steps of 32. Use **4096 x 4096** for the full
+**16,777,216-pixel** area, or **3072 x 4096** for a 3:4 portrait.
 Width and Height can be edited independently. Forge checks the area limit
 when you click Generate and asks you to reduce a dimension if needed.
+Choose **H3-Image LCM 0.9** for a constant 0.9 noise multiplier.
+The original **H3-Image LCM** uses a 1.1-to-0.9 ramp.
+To save the recipe in **Config Presets**, select **H3-Image LCM 0.9**,
+**Simple**, **6 steps** and **CFG 1**. Save those four fields so the preset
+preserves your current dimensions and prompt.
 Switching away restores the previous slider ranges and values. P-H3-Image,
 the original H3 still/video routes and other models keep their own controls.
 [MiniMax's size guide](https://github.com/MiniMax-AI/MiniMax-H3-Image#sizes)
 recommends roughly 16 MP and multiples of 32. The requested cap now permits
-4096 x 4096 (16.78 decimal MP); the 8192 slider range is not an upstream
-per-axis guarantee. Earlier full-model W4A8 generation passed at 4000 x 4000,
+4096 x 4096 (16.78 decimal MP). Earlier full-model W4A8 generation passed at 4000 x 4000,
 5312 x 3008 and 3008 x 5312 on one RTX 5090. A subsequent
 4096-square portrait and identical-pixel warm repeat also passed on this setup,
 with both W4A8 and INT8 ConvRot diffusion checkpoints.

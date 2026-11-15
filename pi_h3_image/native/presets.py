@@ -4,6 +4,7 @@ extension). The P-H3-Image and H3-Image schedules join Forge's scheduler list th
 """
 
 from enum import Enum
+from functools import partial
 
 from modules_forge import presets
 
@@ -62,11 +63,15 @@ def register_sampler() -> None:
     """The H3-Image LCM sampler as a Forge k-diffusion sampler, before the UI lists the samplers."""
     from modules import sd_samplers, sd_samplers_common, sd_samplers_kdiffusion
 
-    from ..sampler import SAMPLER, sample_h3_image_lcm
+    from ..sampler import SAMPLER, SAMPLER_FIXED, sample_h3_image_lcm
 
     data = sd_samplers_common.SamplerData(
         SAMPLER, lambda model: sd_samplers_kdiffusion.KDiffusionSampler(sample_h3_image_lcm, model), ["h3_image_lcm"], {})
     sd_samplers.add_sampler(data)
+    fixed_sampler = partial(sample_h3_image_lcm, noise_start=0.90, noise_end=0.90)
+    sd_samplers.add_sampler(sd_samplers_common.SamplerData(
+        SAMPLER_FIXED, lambda model: sd_samplers_kdiffusion.KDiffusionSampler(fixed_sampler, model),
+        ["h3_image_lcm_09"], {}))
 
 
 def register_scheduler() -> None:

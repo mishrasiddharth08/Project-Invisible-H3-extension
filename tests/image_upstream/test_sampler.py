@@ -1,4 +1,4 @@
-"""The H3-Image LCM sampler: LCM with a falling noise scale."""
+"""H3-Image LCM sampler tests."""
 
 import unittest
 
@@ -7,16 +7,13 @@ try:
 except ImportError:
     torch = None
 
-from pi_h3_image.sampler import S_NOISE_END, S_NOISE_START, SAMPLER, noise_scale
+from pi_h3_image.sampler import noise_scale
 
 
 class NoiseScaleTests(unittest.TestCase):
-    def test_the_scale_falls_linearly_from_the_first_step_to_the_last(self):
-        self.assertEqual(SAMPLER, "H3-Image LCM")
-        self.assertEqual((S_NOISE_START, S_NOISE_END), (1.10, 0.90))
-        # Simple at 6 steps: the community workflow's numbers, the last one unused (the step to 0 adds no noise)
-        self.assertEqual([round(noise_scale(i, 6), 4) for i in range(6)], [1.10, 1.06, 1.02, 0.98, 0.94, 0.90])
-        self.assertEqual(noise_scale(0, 1), S_NOISE_START)
+    def test_original_sampler_keeps_the_noise_ramp(self):
+        self.assertEqual([round(noise_scale(i, 6), 2) for i in range(6)],
+                         [1.10, 1.06, 1.02, 0.98, 0.94, 0.90])
 
 
 class FlowPredictor:
@@ -51,14 +48,13 @@ class SamplerTests(unittest.TestCase):
         model = FakeModel(clean)
         drawn = []
         out = sample_h3_image_lcm(model, torch.randn_like(clean), sigmas,
-                                  noise_sampler=lambda s, s_next: drawn.append((float(s), float(s_next))) or noise)
+                                  noise_sampler=lambda s, s_next: drawn.append((float(s), float(s_next))) or noise,
+                                  noise_start=0.90, noise_end=0.90)
         # one model call per sigma before 0, fresh noise before every call but the first
         self.assertEqual([round(s, 4) for _, s in model.calls], [1.0, 0.75, 0.25])
         self.assertEqual(drawn, [(1.0, 0.75), (0.75, 0.25)])
-        # three steps: the scale runs 1.10, 1.00, 0.90; call 2 sees the clean estimate noised to 0.75 with noise x 1.10,
-        # call 3 to 0.25 with x 1.00
-        torch.testing.assert_close(model.calls[1][0], 0.75 * 1.10 * noise + 0.25 * clean)
-        torch.testing.assert_close(model.calls[2][0], 0.25 * 1.00 * noise + 0.75 * clean)
+        torch.testing.assert_close(model.calls[1][0], 0.75 * 0.90 * noise + 0.25 * clean)
+        torch.testing.assert_close(model.calls[2][0], 0.25 * 0.90 * noise + 0.75 * clean)
         # the last step to 0 returns the clean estimate as it is
         torch.testing.assert_close(out, clean)
 

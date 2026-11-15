@@ -8,7 +8,7 @@ class DimensionsTests(unittest.TestCase):
 
     def test_enter_and_restore(self):
         state, updates = dimension_updates(True, {}, (1024, 1536), self.defaults)
-        self.assertEqual([u["maximum"] for u in updates], [8192, 8192])
+        self.assertEqual([u["maximum"] for u in updates], [4096, 4096])
         self.assertEqual([u["value"] for u in updates], [1024, 1536])
         state2, repeated = dimension_updates(True, state, (4000, 4000), self.defaults)
         self.assertEqual(repeated, [{}, {}])
@@ -27,10 +27,11 @@ class DimensionsTests(unittest.TestCase):
                 validate_dimensions("h3image", *pair)
 
     def test_grid_area_and_out_of_range_entry(self):
-        for pair in ((4000, 4000), (4096, 4096), (5472, 3040), (3040, 5472), (8192, 2048), (2048, 8192)):
+        for pair in ((4000, 4000), (4096, 4096), (3072, 4096), (4096, 3072)):
             validate_dimensions("h3image", *pair)
+        validate_dimensions("h3image", 4128, 1024)
         _, updates = dimension_updates(True, {}, (4096, 4128), self.defaults)
-        self.assertEqual([update["value"] for update in updates], [4096, 4128])
+        self.assertEqual([update["value"] for update in updates], [4096, 4096])
         for other in ("ph3", "h3", "other"):
             validate_dimensions(other, 8192, 8192)
 

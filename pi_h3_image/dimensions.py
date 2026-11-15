@@ -2,7 +2,7 @@
 from .contracts import GRID, MIN_SIDE, H3Error
 
 MAX_PIXELS = 16_777_216
-MAX_SIDE = 8192  # UI range, not an upstream per-axis support claim.
+MAX_SIDE = 4096
 
 def validate_dimensions(profile_name, width, height):
     if profile_name == "h3image" and width * height > MAX_PIXELS:

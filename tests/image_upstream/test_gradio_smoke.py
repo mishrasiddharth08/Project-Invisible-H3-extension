@@ -71,7 +71,7 @@ class GradioSmoke(unittest.TestCase):
             with patch.object(ui, "checkpoint_info", return_value=types.SimpleNamespace(filename="model")):
                 with patch.object(ui, "inspect_model", return_value=types.SimpleNamespace(variant=H3_IMAGE)):
                     entered = fn("model", {}, 1024, 1536)
-                self.assertEqual(entered[1]["maximum"], 8192)
+                self.assertEqual(entered[1]["maximum"], 4096)
                 self.assertEqual(entered[2]["step"], 32)
                 for variant in (PH3_IMAGE, H3, "other", None):
                     item = None if variant is None else types.SimpleNamespace(variant=variant)
