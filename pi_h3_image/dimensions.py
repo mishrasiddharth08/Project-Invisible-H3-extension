@@ -1,0 +1,25 @@
+"""Model-local 16,777,216-pixel slider range; no Forge imports or GPU work."""
+from .contracts import GRID, MIN_SIDE, H3Error
+
+MAX_PIXELS = 16_777_216
+MAX_SIDE = 4096
+
+def validate_dimensions(profile_name, width, height):
+    if profile_name == "h3image" and width * height > MAX_PIXELS:
+        raise H3Error("MiniMax-H3-Image output is limited to 16,777,216 pixels; reduce Width or Height.")
+
+
+
+def dimension_updates(active, saved, values, defaults):
+    saved = dict(saved or {"active": False})
+    if active and not saved.get("active"):
+        saved["sliders"] = [dict(config, value=value) for config, value in zip(defaults, values)]
+        updates = [dict(minimum=MIN_SIDE, maximum=MAX_SIDE, step=GRID,
+                        value=max(MIN_SIDE, min(MAX_SIDE, round(value / GRID) * GRID)))
+                   for value in values]
+    elif not active and saved.get("active"):
+        updates = saved.pop("sliders")
+    else:
+        updates = [{}, {}]
+    saved["active"] = active
+    return saved, updates

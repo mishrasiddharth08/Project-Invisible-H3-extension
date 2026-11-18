@@ -66,10 +66,13 @@ def _hook_detection() -> None:
     original = detection.detect_unet_config
 
     def detect_unet_config(state_dict, key_prefix, *args, **kwargs):
-        dit_config = model.detect(state_dict, key_prefix)
-        if dit_config is not None:
+        # The image detector has filename context for Pruna. Only an identified
+        # H3 Image route takes priority over the legacy audio-layout detector.
+        dit_config = original(state_dict, key_prefix, *args, **kwargs)
+        if dit_config is not None and dit_config.get("image_model") == "minimax_h3_image":
             return dit_config
-        return original(state_dict, key_prefix, *args, **kwargs)
+        legacy_config = model.detect(state_dict, key_prefix)
+        return legacy_config if legacy_config is not None else dit_config
 
     detection.detect_unet_config = detect_unet_config
 

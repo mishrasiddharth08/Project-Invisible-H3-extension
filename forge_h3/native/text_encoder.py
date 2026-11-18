@@ -11,11 +11,19 @@ from dataclasses import asdict, dataclass
 
 import torch
 import torch.nn as nn
-from backend.nn.llm import llama
+from backend.nn.llm import llama, qwen35
 from backend.nn.llm.llama import Llama2_, Qwen3VL, Qwen3VL_4BConfig
-from backend.nn.llm.qwen35 import QWEN3VL_VISION, Qwen3VLVisionModel
+from backend.nn.llm.qwen35 import Qwen3VLVisionModel
 
 VISION_KEYS = ("hidden_size", "intermediate_size", "depth", "num_heads", "num_position_embeddings", "deepstack_visual_indexes")
+
+
+def vision_defaults() -> dict:
+    """Accept Forge's flat or per-model Qwen3-VL vision configuration."""
+    common = getattr(qwen35, "QWEN3VL_VISION_COMMON", None)
+    if common is None:
+        return dict(qwen35.QWEN3VL_VISION)
+    return {**common, **qwen35.QWEN3VL_VISION["qwen3vl_8b"]}
 
 
 @dataclass
@@ -56,7 +64,8 @@ def _attention_mask(attention_mask: torch.Tensor | None, x: torch.Tensor) -> tor
 
 
 class Qwen3VL32B(Qwen3VL):
-    def __init__(self, config_dict: dict):
+    def __init__(self, config_dict: dict, **kwargs):
+        # New Forge loaders pass model_type; H3 always uses its own 32B config.
         nn.Module.__init__(self)
         text_config: dict = config_dict.get("text_config", {})
         if text_config.get("hidden_size", None) != Qwen3VL_32BConfig.hidden_size:
@@ -70,13 +79,13 @@ class Qwen3VL32B(Qwen3VL):
         self.num_layers = config.num_hidden_layers
         self.model = Llama2_(config)
 
-        vision_config = {**QWEN3VL_VISION, "out_hidden_size": config.hidden_size}
+        vision_config = {**vision_defaults(), "out_hidden_size": config.hidden_size}
         for key in VISION_KEYS:
             if key in config_dict.get("vision_config", {}):
                 vision_config[key] = config_dict["vision_config"][key]
         self.visual = Qwen3VLVisionModel(vision_config)
 
-    def forward(self, x, attention_mask=None, embeds=None, num_tokens=None, intermediate_output=None, final_layer_norm_intermediate=True, dtype=None, embeds_info=[]):
+    def forward(self, x, attention_mask=None, embeds=None, num_tokens=None, intermediate_output=None, final_layer_norm_intermediate=True, dtype=None, embeds_info=[], **kwargs):
         position_ids, visual_mask, deepstack = (None, None, None) if embeds is None else self.build_image_inputs(embeds, embeds_info)
         if position_ids is None:
             # text only: the three M-RoPE axes coincide and Forge Neo's own path is exact

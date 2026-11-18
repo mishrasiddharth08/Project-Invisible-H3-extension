@@ -144,6 +144,14 @@ class FlowTests(unittest.TestCase):
         engine.mode, engine.references = "fl2va", []
         return engine
 
+    def test_shift_accepts_current_forge_dimensions(self):
+        from backend.diffusion_engine.base import ForgeDiffusionEngine
+        with patch.object(ForgeDiffusionEngine, "set_shift", create=True) as base_shift:
+            self.engine.set_shift(12.0, width=384, height=256)
+            base_shift.assert_called_once_with(12.0)
+        self.assertEqual(self.engine.video_shift, 12.0)
+        self.assertEqual(self.engine.forge_objects.unet.model.diffusion_model.sigma_shift_video, 12.0)
+
     def use_ref2va(self):
         """Select a Ref2VA checkpoint: the same tensors as FL2VA, told apart by the name."""
         path = checkpoint(self.root / "minimax_h3_ref2va_pruned_w4a8_mixed.safetensors", DIT)
