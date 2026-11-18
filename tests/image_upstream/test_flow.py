@@ -275,7 +275,9 @@ class FlowTests(unittest.TestCase):
         with patch.object(pictures, "H3_IMAGE_VAE_SHORT_EDGE", (64, 128)), patch.object(pictures, "H3_IMAGE_VISION_SHORT_EDGE", 32):
             cond = self.run_until_sampling(p)
         # no edit prefix, "Picture 1: " before the vision block, and the model's own picture sizes
-        self.assertEqual((p.prompt, p.denoising_strength, p.pi_h3_image_request.references), ("make Picture 1 a painting", 1.0, 1))
+        self.assertTrue(p.prompt.startswith("make Picture 1 a painting\n\n"))
+        self.assertIn("a bare, unadorned forehead", p.prompt)
+        self.assertEqual((p.denoising_strength, p.pi_h3_image_request.references), (1.0, 1))
         text = self.engine.text_processing_engine_h3
         self.assertEqual(text.picture_label, "Picture %d: ")
         self.assertEqual([tuple(i.shape) for i in text.images], [(1, 32, 64, 3)])
@@ -484,6 +486,20 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(self.engine.output_scale, 1)
         self.assertNotIn("H3 Output scale", p.extra_generation_params)
         integration.postprocess(p, None)
+
+    def test_forehead_mark_guidance_preserves_explicit_requests_independently(self):
+        guide = integration._guide_forehead_marks
+        default = guide("A portrait")
+        self.assertIn("a bare, unadorned forehead", default)
+        self.assertIn("a natural hair part", default)
+        self.assertNotIn("bindi", default)
+        self.assertNotIn("sindoor", default)
+        self.assertEqual(guide(default), default)
+        self.assertNotIn("a bare, unadorned forehead", guide("A portrait with a Bindi"))
+        self.assertIn("a natural hair part", guide("A portrait with a Bindi"))
+        self.assertNotIn("a natural hair part", guide("A portrait with sindur"))
+        self.assertIn("a natural hair part", guide("A portrait in a vermilion dress"))
+        self.assertEqual(guide("A portrait with a bindi and sindoor"), "A portrait with a bindi and sindoor")
 
     def test_resolution_shift_moves_the_grid_of_the_schedule_and_the_heads(self):
         model = self.engine.forge_objects.unet.model

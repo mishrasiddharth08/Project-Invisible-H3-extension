@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-11-18 (image preview)
+
+- Use affirmative forehead and hair-part guidance for MiniMax-H3-Image while
+  preserving explicit requests for a bindi or sindoor.
+- Remove the MiniMax-H3-Image sampler hint from the Forge panel.
+
 ## 2026-11-13 (image preview)
 
 - Add MiniMax-H3-Image-only 32-grid dimension controls, up to 8192 per side

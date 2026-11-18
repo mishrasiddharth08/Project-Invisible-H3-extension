@@ -4,6 +4,7 @@ Forge loads the model (native/patches.py registers it), samples and decodes as u
 request, give the sampler the packed video+audio noise of one still image, and let Forge save the picture.
 """
 
+import re
 from fractions import Fraction
 from pathlib import Path
 
@@ -16,6 +17,23 @@ from .resolution_shift import odds_factor
 API_DEFAULT_DISTILLED_CFG = 3.5
 # img2img Resize mode "Just resize (latent upscale)": it would interpolate the placeholder latent
 LATENT_UPSCALE = 3
+
+
+_BINDI = re.compile(r"\b(?:bindis?|forehead (?:dot|mark)|tilak)\b", re.IGNORECASE)
+_SINDOOR = re.compile(r"\b(?:sindoor|sindur|vermilion (?:powder|in (?:her |the )?hair))\b", re.IGNORECASE)
+_BARE_FOREHEAD = "a bare, unadorned forehead with continuous natural skin between the eyebrows"
+_NATURAL_HAIR_PART = "a natural hair part showing only scalp and hair"
+
+
+def _guide_forehead_marks(prompt):
+    guidance = []
+    if _BARE_FOREHEAD not in prompt and not _BINDI.search(prompt):
+        guidance.append(_BARE_FOREHEAD)
+    if _NATURAL_HAIR_PART not in prompt and not _SINDOOR.search(prompt):
+        guidance.append(_NATURAL_HAIR_PART)
+    if not guidance:
+        return prompt
+    return prompt.rstrip() + "\n\nIf people are shown, depict " + " and ".join(guidance) + "."
 
 
 def checkpoint_info(value):
@@ -187,6 +205,11 @@ def _before_process(p):
             p.pi_h3_image_standard_img2img = True
             detail = f", img2img at denoising strength {p.denoising_strength:g}"
     request = GenerationRequest(width=p.width, height=p.height, references=len(refs))
+    if profile.name == "h3image":
+        if isinstance(p.prompt, str):
+            p.prompt = _guide_forehead_marks(p.prompt)
+        elif isinstance(p.prompt, list):
+            p.prompt = [_guide_forehead_marks(prompt) for prompt in p.prompt]
     p.pi_h3_image_request = request
     p.pi_h3_image_components = components
     p.pi_h3_image_references = refs
