@@ -1,0 +1,8 @@
+{
+    "MiniMax H3 Image --- ER-SDE, Beta, 4 steps, CFG 1": {
+        "txt2img_sampling": "ER SDE",
+        "txt2img_scheduler": "Beta",
+        "txt2img_steps": 4,
+        "txt2img_cfg_scale": 1
+    }
+}

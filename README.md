@@ -40,6 +40,20 @@ The original **H3-Image LCM** uses a 1.1-to-0.9 ramp.
 To save the recipe in **Config Presets**, select **H3-Image LCM 0.9**,
 **Simple**, **6 steps** and **CFG 1**. Save those four fields so the preset
 preserves your current dimensions and prompt.
+
+For the four-step option, choose **ER SDE**, **Beta**, **4 steps** and **CFG 1**.
+Save those four fields as **MiniMax H3 Image --- ER-SDE, Beta, 4 steps, CFG 1**.
+The supplied [txt2img preset](resources/config-presets/config-txt2img.json) and
+[img2img preset](resources/config-presets/config-img2img.json) use the existing
+Config-Presets format. Merge their entry into the corresponding JSON file in
+`extensions/Config-Presets`, preserving the other entries, then restart Forge.
+Dimensions, prompts, seeds, LoRAs and img2img denoising remain controlled by your
+current selections. The comparison used Beta alpha/beta 0.6/0.6, an INT8 ConvRot
+MiniMax-H3-Image checkpoint, INT4 encoder and FP16 VAE at 3456 x 4608.
+Six renders at seed 3070789469 compared this recipe with LCM 0.9 and a 3+1
+ER-SDE scheduler split, with and without Kay Jenkins at strength 1.0.
+ER-SDE/Beta was the preferred Kay result; LCM 0.9 narrowly led without LoRA.
+
 Switching away restores the previous slider ranges and values. P-H3-Image,
 the original H3 still/video routes and other models keep their own controls.
 [MiniMax's size guide](https://github.com/MiniMax-AI/MiniMax-H3-Image#sizes)

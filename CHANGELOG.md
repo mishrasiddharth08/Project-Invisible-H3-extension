@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-11-20
+
+- Add txt2img and img2img Config-Presets entries for ER-SDE, Beta, four steps
+  and CFG 1. Dimensions and adapters use the current selections.
+
 ## 2026-11-18 (image preview)
 
 - Use affirmative forehead and hair-part guidance for MiniMax-H3-Image while
