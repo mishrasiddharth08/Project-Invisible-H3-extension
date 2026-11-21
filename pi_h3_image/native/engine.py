@@ -18,7 +18,7 @@ from backend.patcher.vae import VAE
 
 from ..contracts import H3Error, raise_pending_error
 from ..profiles import PICTURE_LABEL
-from ..resize import area_resize
+from ..resize import area_resize, lanczos_resize
 from .layout import prompt_memory
 from .model import SHIFT, MiniMaxH3
 from .streams import Generation, still_shapes
@@ -125,6 +125,7 @@ class MiniMaxH3Engine(ForgeDiffusionEngine):
         self.img2img_input = False
         # the [H3] Output scale setting: the fraction of each side of the decoded picture that is kept (area filter)
         self.output_scale = Fraction(1)
+        self.output_resize = area_resize
 
     def _h3_predictor(self, estimated_config):
         """MiniMax-H3-Image samples on the sigma grid its output heads were distilled on; the others on Forge's
@@ -153,12 +154,13 @@ class MiniMaxH3Engine(ForgeDiffusionEngine):
         """Called by the script for every generation: whether Forge's img2img input image starts the sampling."""
         self.img2img_input = bool(standard)
 
-    def set_output_scale(self, scale) -> None:
+    def set_output_scale(self, scale, *, lanczos=False) -> None:
         """Called by the script for every generation: 1 keeps the decoded picture; 3/4, 2/3, 1/2 or 1/4 shrinks each
         side to that fraction with an exact area filter (resize.area_resize), which averages away the pixel-level
         texture the 16x decoder invents. A side that does not divide is rounded to the nearest pixel (2/3 of 4096 is
         2731)."""
         self.output_scale = min(Fraction(scale), Fraction(1))
+        self.output_resize = lanczos_resize if lanczos else area_resize
 
     def set_resolution_shift(self, factor: float) -> bool:
         """Called by the script for every generation, before Forge makes the schedule: move MiniMax-H3-Image's sigma
@@ -283,6 +285,6 @@ class MiniMaxH3Engine(ForgeDiffusionEngine):
             raise H3Error(f"The H3 VAE produced NaN or Inf values: the picture would come out black.{advice}")
         frame = pixels[:, :, 0].float()
         if self.output_scale < 1:
-            frame = area_resize(frame, self.output_scale)
+            frame = self.output_resize(frame, self.output_scale)
         generation.frame = frame.cpu()
         return generation.frame.mul(2.0).sub(1.0)

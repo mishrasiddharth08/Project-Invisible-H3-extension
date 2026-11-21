@@ -13,6 +13,11 @@ The [H3 Image preview](#minimax-h3-image-and-p-h3-image-preview) is available on
 
 ## MiniMax-H3-Image and P-H3-Image preview
 
+The small **Downscale** accordion in txt2img and img2img defaults to **Full size**.
+Generate at your chosen Width and Height, then optionally save at **50%** of
+each side or **33% Lanczos**. Scaling happens after generation, before saving
+and gallery display. Prompt, adapters and sampling settings stay under your control.
+
 The `h3image` and `ph3` presets use Forge Neo's standard **txt2img**, **img2img**
 and **Generate** controls. The existing **H3** preset still uses the original
 FL2VA/Ref2VA checkpoints for stills and video.

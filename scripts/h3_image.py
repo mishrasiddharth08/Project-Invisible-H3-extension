@@ -48,7 +48,8 @@ class Script(scripts.Script):
         patches.end_sampling()
         integration.script_before_process(p)
 
-    def process(self, p, *args):
+    def process(self, p, output_scale=None, *args):
+        p.pi_h3_output_scale = output_scale
         integration.process(p)
 
     def process_before_every_sampling(self, p, *args, **kwargs):

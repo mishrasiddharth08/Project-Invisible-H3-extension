@@ -91,7 +91,8 @@ class GradioSmoke(unittest.TestCase):
         for is_img2img in (False, True):
             with gr.Blocks():
                 panel = ui.Panel(is_img2img)
-            self.assertEqual(panel.inputs, [])
+            self.assertEqual(panel.inputs, [panel.output_scale])
+            self.assertEqual(panel.output_scale.value, "1")
 
     def test_real_blocks_build_and_model_switching(self):
         import gradio as gr

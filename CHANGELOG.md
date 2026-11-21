@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-11-21
+
+- Add a small Downscale accordion to txt2img and img2img with Full size as the
+  default, plus optional 50% and 33% Lanczos output sizes.
+
 ## 2026-11-20
 
 - Add txt2img and img2img Config-Presets entries for ER-SDE, Beta, four steps

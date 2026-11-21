@@ -41,6 +41,10 @@ class Panel:
         self.is_img2img = is_img2img
         self.saved = gr.State({"active": False})
         with gr.Group(visible=False, elem_id=f"{self.tab}_pi_h3_image_status") as self.accordion:
+            choices = [("Full size", "1"), ("50%", "1/2"), ("33% Lanczos", "33% Lanczos")]
+            with gr.Accordion("Downscale", open=False):
+                self.output_scale = gr.Dropdown(choices=choices, value="1", label="Output size",
+                                                elem_id=f"{self.tab}_h3_output_scale")
             self.status = gr.Markdown("Select the H3 text encoder and VAE in VAE / Text Encoder.")
             if is_img2img:
                 gr.Markdown("With **[H3] Enable Reference** on (Settings â†’ MiniMax H3), img2img is an **edit** with "
@@ -93,8 +97,7 @@ class Panel:
 
     @property
     def inputs(self):
-        # the panel has no generation inputs of its own
-        return []
+        return [self.output_scale]
 
     @property
     def needed(self):
