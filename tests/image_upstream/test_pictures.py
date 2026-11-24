@@ -57,6 +57,20 @@ class PictureTests(unittest.TestCase):
         self.assertEqual(pictures.short_edge(6000, 4000, 1024, 2048), (3072, 2048))
         self.assertEqual(pictures.short_edge(300, 100, 1024, 2048), (3072, 1024))
 
+    def test_reference_pipeline_caps_each_encoder_on_both_orientations(self):
+        from unittest.mock import patch
+        for width, height in ((8192, 128), (128, 8192), (20000, 10)):
+            inputs = Image.new("RGB", (width, height))
+            with self.subTest(size=inputs.size), patch.object(pictures, "to_tensor", side_effect=lambda im, size: size):
+                vae, vision = pictures.edit_inputs(H3_IMAGE, [inputs], 2048, 1024)
+            for (w, h), limit in ((vae[0], pictures.H3_IMAGE_VAE_MAX_PIXELS),
+                                  (vision[0], pictures.H3_IMAGE_VISION_MAX_PIXELS)):
+                self.assertEqual((w % 32, h % 32), (0, 0))
+                self.assertLessEqual(w * h, limit)
+                self.assertEqual(w < h, width < height)
+                if min(width, height) >= 128:
+                    self.assertLess(abs((w / h) / (width / height) - 1), 0.15)
+
     def test_gallery_items_from_the_api_are_decoded(self):
         import base64
         import io
@@ -72,6 +86,9 @@ class PictureTests(unittest.TestCase):
         self.assertEqual(pictures.edit_prompt("put a hat on"), "Edit <Picture 1>. put a hat on")
         self.assertEqual(pictures.edit_prompt("  Edit <Picture 2>. swap them "), "Edit <Picture 2>. swap them")
         self.assertEqual(pictures.edit_prompt("subject_definitions: a brief"), "subject_definitions: a brief")
+        prompts = ["put a hat on", "  Edit <Picture 2>. swap them "]
+        self.assertEqual(pictures.edit_prompt(prompts), ["Edit <Picture 1>. put a hat on", "Edit <Picture 2>. swap them"])
+        self.assertEqual(prompts[0], "put a hat on")
 
     @unittest.skipIf(torch is None, "needs torch")
     def test_prepared_picture_is_rgb_in_zero_one_within_the_area(self):

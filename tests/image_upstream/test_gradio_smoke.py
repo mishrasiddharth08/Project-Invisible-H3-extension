@@ -92,7 +92,8 @@ class GradioSmoke(unittest.TestCase):
             with gr.Blocks():
                 panel = ui.Panel(is_img2img)
             self.assertEqual(panel.inputs, [panel.output_scale])
-            self.assertEqual(panel.output_scale.value, "1")
+            self.assertEqual(panel.output_scale.value, "settings")
+            self.assertIn(("Full size", "1"), panel.output_scale.choices)
 
     def test_real_blocks_build_and_model_switching(self):
         import gradio as gr
@@ -134,11 +135,12 @@ class GradioSmoke(unittest.TestCase):
                                 pass
                             ui.capture(hires)
                             ui.capture(gr.Checkbox(value=True, visible=False, elem_id="txt2img_hr-checkbox"))
-                            # the Refiner, as Forge Neo's processing script names it
-                            with gr.Accordion("Refiner", elem_id="txt2img_enable") as refiner:
-                                pass
-                            ui.capture(refiner)
-                            ui.capture(gr.Checkbox(value=False, visible=False, elem_id="txt2img_enable-checkbox"))
+                        # Give each tab a Refiner at its own unrelated initial checkbox state.
+                        with gr.Accordion("Refiner", elem_id=f"{tab}_enable") as refiner:
+                            pass
+                        ui.capture(refiner)
+                        ui.capture(gr.Checkbox(value=tab == "img2img", visible=False,
+                                               elem_id=f"{tab}_enable-checkbox"))
                         ui.Panel(tab == "img2img")
                     self.assertEqual(ui.bind_all(), [])
                 self.assertTrue(all(p.bound for p in ui.PANELS))
@@ -146,7 +148,7 @@ class GradioSmoke(unittest.TestCase):
                 fn = next(f.fn for f in demo.fns.values() if getattr(f.fn, "__name__", "") == "update")
                 # outputs: accordion, status, summary, state, sampler, scheduler, CFG, preset, then the hidden
                 # accordions with their checkboxes
-                enter = fn("Community", [p.name for p in components], {"active": False}, "DPM++ 2M", "Automatic", 7, "sd")
+                enter = fn("Community", [p.name for p in components], {"active": False}, "DPM++ 2M", "Automatic", 7, "sd", True)
                 self.assertTrue(enter[0]["visible"])
                 self.assertIn("encoder.safetensors (plain)", enter[2])
                 self.assertIn("**Model:** P-H3-Image", enter[2])
@@ -161,12 +163,12 @@ class GradioSmoke(unittest.TestCase):
                 modules.shared.opts.ph3_t2i_cfg = 3.5
                 # MiniMax H3 with its own text encoder is the video model: the status line says what to select
                 video = fn("Community", [str(checkpoint(root / "h3_te.safetensors", TE)), components[1].name], enter[3],
-                           "Euler", "Automatic", 3.5, "sd")
+                           "Euler", "Automatic", 3.5, "sd", False)
                 self.assertIn("audio-video checkpoint makes still images with the P-H3-Image text encoder", video[1])
                 # a missing module is reported in the status line
-                partial = fn("Community", [components[0].name], enter[3], "Euler", "Automatic", 3.5, "sd")
+                partial = fn("Community", [components[0].name], video[3], "Euler", "Automatic", 3.5, "sd", False)
                 self.assertIn("Select the H3 VAE", partial[1])
-                leave = fn("Regular", [], partial[3], "Euler", "Simple", 1, "sd")
+                leave = fn("Regular", [], partial[3], "Euler", "Simple", 1, "sd", False)
                 self.assertEqual(leave[4]["value"], "DPM++ 2M")
                 self.assertEqual(leave[6]["value"], 7)
                 self.assertFalse(leave[0]["visible"])
@@ -175,9 +177,20 @@ class GradioSmoke(unittest.TestCase):
                 self.assertNotIn("interactive", leave[7])
                 # Hires. fix is hidden and turned off with H3, shown again after
                 self.assertEqual((enter[8]["visible"], enter[9]["value"]), (False, False))
-                self.assertEqual((enter[10]["visible"], enter[11]["value"]), (False, False))
-                self.assertTrue(leave[8]["visible"] and leave[10]["visible"])
-                self.assertNotIn("value", leave[9])
+                self.assertEqual((leave[8]["visible"], leave[8]["open"], leave[9]["value"]),
+                                 (True, True, True))
+                # No component output can hide/disable the Refiner, nor change its checkbox.
+                self.assertEqual(len(enter), 10)
+                self.assertEqual(len(leave), 10)
+                for dep in demo.config["dependencies"]:
+                    for tab in ("txt2img", "img2img"):
+                        for elem in ("enable", "enable-checkbox"):
+                            self.assertNotIn(ui.COMPONENTS[f"{tab}_{elem}"]._id, dep["outputs"])
+                enter_closed = fn("Community", [p.name for p in components], leave[3],
+                                  "DPM++ 2M", "Automatic", 7, "sd", False)
+                leave_closed = fn("Regular", [], enter_closed[3], "Euler", "Simple", 1, "sd", False)
+                self.assertEqual((leave_closed[8]["visible"], leave_closed[8]["open"], leave_closed[9]["value"]),
+                                 (True, False, False))
                 ui.reset()
 
 

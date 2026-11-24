@@ -87,6 +87,9 @@ def settings():
 
 
 if ENABLED:
+    from pi_h3_image.api_shift import install as install_api_shift
+
+    install_api_shift()
     script_callbacks.on_ui_settings(settings)
     script_callbacks.on_before_ui(ui.reset)
     script_callbacks.on_after_component(ui.capture)

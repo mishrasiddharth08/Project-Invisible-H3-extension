@@ -12,10 +12,8 @@ from .profiles import H3_IMAGE
 
 COMPONENTS = {}
 NATIVE_CONTROLS = ("sampling", "scheduler", "cfg_scale")
-# Forge's InputAccordions that do nothing for H3, by elem_id after the tab: Hires. fix, and the Refiner when
-# Settings shows it (Forge Neo's processing script names it just "enable"); hidden and turned off while an H3
-# checkpoint is selected, shown again after
-HIDDEN_ACCORDIONS = ("hr", "enable")
+# H3 does not support Forge's built-in Hires. fix pass. The separate Refiner remains available.
+HIDDEN_ACCORDIONS = ("hr",)
 PANELS = []
 logger = logging.getLogger("forge_h3")
 
@@ -41,9 +39,10 @@ class Panel:
         self.is_img2img = is_img2img
         self.saved = gr.State({"active": False})
         with gr.Group(visible=False, elem_id=f"{self.tab}_pi_h3_image_status") as self.accordion:
-            choices = [("Full size", "1"), ("50%", "1/2"), ("33% Lanczos", "33% Lanczos")]
+            choices = [("Use Settings", "settings"), ("Full size", "1"), ("50%", "1/2"),
+                       ("33% Lanczos", "33% Lanczos")]
             with gr.Accordion("Downscale", open=False):
-                self.output_scale = gr.Dropdown(choices=choices, value="1", label="Output size",
+                self.output_scale = gr.Dropdown(choices=choices, value="settings", label="Output size",
                                                 elem_id=f"{self.tab}_h3_output_scale")
             self.status = gr.Markdown("Select the H3 text encoder and VAE in VAE / Text Encoder.")
             if is_img2img:
@@ -125,11 +124,13 @@ class Panel:
         preset_input = [preset] if preset is not None else []
         hidden = [(COMPONENTS[key], COMPONENTS[f"{key}-checkbox"]) for key in (f"{self.tab}_{name}" for name in HIDDEN_ACCORDIONS)
                   if key in COMPONENTS and f"{key}-checkbox" in COMPONENTS]
-        inputs = [checkpoint, modules, self.saved] + native + preset_input
+        hidden_defaults = [accordion.visible for accordion, _ in hidden]
+        inputs = [checkpoint, modules, self.saved] + native + preset_input + [checkbox for _, checkbox in hidden]
         outputs = ([self.accordion, self.status, self.summary, self.saved] + native + preset_input
                    + [component for pair in hidden for component in pair])
 
         def update(value, module_values, saved, *values):
+            hidden_values = values[len(native) + len(preset_input):]
             values = values[:len(native)]
             info = checkpoint_info(value)
             error = ""
@@ -145,6 +146,7 @@ class Panel:
             leaving = not active and saved.get("active")
             if entering:
                 saved["native"] = [dict(config, value=value) for config, value in zip(defaults, values)]
+                saved["hidden_values"] = hidden_values
             summary = ""
             profile = None
             if active:
@@ -174,6 +176,9 @@ class Panel:
                 saved.pop("native", None)
                 saved.pop("profile", None)
             saved["active"] = active
+            accordion_updates = hidden_updates(hidden_defaults, active, leaving, saved.get("hidden_values", ()))
+            if leaving:
+                saved.pop("hidden_values", None)
             if error:
                 status = html.escape(error)
             elif profile is H3_IMAGE:
@@ -186,7 +191,7 @@ class Panel:
             else:
                 status = "H3 makes one still image per generation."
             return ([gr.update(visible=active), status, summary, saved] + updates
-                    + ([gr.update()] if preset is not None else []) + hidden_updates(len(hidden), active, leaving))
+                    + ([gr.update()] if preset is not None else []) + accordion_updates)
 
         for event in (checkpoint.change, modules.change):
             event(update, inputs=inputs, outputs=outputs, queue=False, show_progress=False)
@@ -212,13 +217,20 @@ def preset_settings(tab, profile=H3_IMAGE):
     return sampler, scheduler, cfg if cfg > 0 else None
 
 
-def hidden_updates(count, active, leaving):
-    """For each hidden accordion: the accordion, then its checkbox (the value Forge reads)."""
+def hidden_updates(visibility, active, leaving, saved_values):
+    """The accordion and its separate checkbox (which Forge reads as the generation input)."""
     if active:
-        return [gr.update(visible=False), gr.update(value=False)] * count
+        return [gr.update(visible=False, open=False), gr.update(value=False)] * len(visibility)
     if leaving:
-        return [gr.update(visible=True), gr.update()] * count
-    return [gr.update(), gr.update()] * count
+        updates = []
+        for index, visible in enumerate(visibility):
+            if index < len(saved_values):
+                checked = saved_values[index]
+                updates.extend((gr.update(visible=visible, open=checked), gr.update(value=checked)))
+            else:
+                updates.extend((gr.update(visible=visible), gr.update()))
+        return updates
+    return [gr.update(), gr.update()] * len(visibility)
 
 
 def bind_all(trigger="ui_tabs"):

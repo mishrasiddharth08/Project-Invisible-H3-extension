@@ -6,7 +6,8 @@ Integrated holds the references, <Picture 2> onwards. The original picture is ta
 the output size, and each model sizes it its own way, aspect kept, sides on the 32 grid:
 
 - P-H3-Image: within 1 MP for the text encoder and within the output area for the VAE, never enlarged;
-- MiniMax-H3-Image: a 1024 short edge for the text encoder, a short edge between 1024 and 2048 for the VAE.
+- MiniMax-H3-Image: a 1024 short edge for the text encoder, a short edge between 1024 and 2048 for the VAE,
+  subject to per-reference pixel limits for unusually wide or tall pictures.
 """
 
 import base64
@@ -25,6 +26,9 @@ VISION_PIXELS = 1_000_000
 # MiniMax-H3-Image: the short edge the text encoder sees, and the range the VAE keeps it in
 H3_IMAGE_VISION_SHORT_EDGE = 1024
 H3_IMAGE_VAE_SHORT_EDGE = (1024, 2048)
+# Keep the usual short-edge sizing, but bound both allocations for unusually wide/tall references.
+H3_IMAGE_VISION_MAX_PIXELS = 4 * 1024**2
+H3_IMAGE_VAE_MAX_PIXELS = 8 * 1024**2
 H3_IMAGE_PROFILE = "h3image"
 # a short instruction gets the edit prefix; an edit brief from Pruna's prompt upsampler, or an instruction that
 # already names the picture to edit, is encoded as it is
@@ -79,6 +83,19 @@ def short_edge(width: int, height: int, low: int, high: int) -> tuple[int, int]:
     return tuple(max(GRID, round(side * scale / GRID) * GRID) for side in (width, height))
 
 
+def bounded_short_edge(width: int, height: int, low: int, high: int, pixels: int) -> tuple[int, int]:
+    """Use the usual sizing when it fits; otherwise scale proportionally within a hard grid-aligned budget."""
+    target = short_edge(width, height, low, high)
+    if target[0] * target[1] <= pixels:
+        return target
+    scale = math.sqrt(pixels / (width * height))
+    short, long = sorted((width, height))
+    short = max(GRID, math.floor(short * scale / GRID) * GRID)
+    # The minimum grid cell can put an extremely narrow side above the ideal size. Limit the other side too.
+    long = max(GRID, min(math.floor(long * scale / GRID), pixels // (short * GRID)) * GRID)
+    return (short, long) if width <= height else (long, short)
+
+
 def to_tensor(image: Image.Image, size: tuple[int, int]):
     """(1, h, w, 3) float in [0, 1] at `size` (width, height), the form the text encoder and the VAE take."""
     import torch
@@ -98,17 +115,22 @@ def edit_inputs(profile, images, width: int, height: int) -> tuple[list, list]:
     vae, vision = [], []
     for image in images:
         if profile.name == H3_IMAGE_PROFILE:
-            vae.append(to_tensor(image, short_edge(image.width, image.height, *H3_IMAGE_VAE_SHORT_EDGE)))
-            vision.append(to_tensor(image, short_edge(image.width, image.height, H3_IMAGE_VISION_SHORT_EDGE,
-                                                      H3_IMAGE_VISION_SHORT_EDGE)))
+            vae_size = bounded_short_edge(image.width, image.height, *H3_IMAGE_VAE_SHORT_EDGE,
+                                          H3_IMAGE_VAE_MAX_PIXELS)
+            vision_size = bounded_short_edge(image.width, image.height, H3_IMAGE_VISION_SHORT_EDGE,
+                                             H3_IMAGE_VISION_SHORT_EDGE, H3_IMAGE_VISION_MAX_PIXELS)
+            vae.append(to_tensor(image, vae_size))
+            vision.append(to_tensor(image, vision_size))
         else:
             vae.append(prepare(image, width * height))
             vision.append(prepare(image, VISION_PIXELS))
     return vae, vision
 
 
-def edit_prompt(prompt: str) -> str:
-    """The instruction as the model reads it when pictures are present."""
+def edit_prompt(prompt: str | list[str]) -> str | list[str]:
+    """The instruction(s) as the model reads them when pictures are present."""
+    if isinstance(prompt, list):
+        return [edit_prompt(item) for item in prompt]
     if EDIT_VERBATIM.match(prompt):
         return prompt.strip()
     return EDIT_PREFIX + prompt

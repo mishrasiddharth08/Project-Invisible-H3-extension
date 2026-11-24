@@ -1,5 +1,15 @@
 # Changes
 
+## H3 audit fixes
+
+- Keep Refiner visible and restore the previous Hires. fix checkbox when leaving
+  H3 Image models. Keep the factory output size at Full size while allowing the
+  Downscale dropdown to use saved Settings until explicitly overridden.
+- Clear legacy H3 sampling state after failure, bound native H3 Image reference
+  allocations before resizing, and apply the Pruna edit prefix to prompt lists.
+- Respect explicit API Shift values and use the corresponding tab's preset when
+  the request omits Shift. Downscale by exact 2 x 2 averaging at 50% on an even grid.
+
 ## 2026-11-21
 
 - Add a small Downscale accordion to txt2img and img2img with Full size as the

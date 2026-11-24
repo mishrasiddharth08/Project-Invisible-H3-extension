@@ -32,9 +32,13 @@ def area_matrix(size_in: int, size_out: int, dtype=torch.float32, device=None) -
 
 def area_resize(image: torch.Tensor, scale) -> torch.Tensor:
     """(..., H, W) shrunk by `scale` (at most 1) on both axes with an exact area filter."""
-    if Fraction(scale) >= 1:
+    scale = Fraction(scale)
+    if scale >= 1:
         return image
     height, width = image.shape[-2:]
+    if scale == Fraction(1, 2) and height > 0 and width > 0 and height % 2 == width % 2 == 0:
+        # For even dimensions the exact filter is a disjoint 2 x 2 block mean, without dense weight matrices.
+        return image.reshape(*image.shape[:-2], height // 2, 2, width // 2, 2).mean(dim=(-3, -1))
     rows = area_matrix(height, scaled_size(height, scale), image.dtype, image.device)
     cols = area_matrix(width, scaled_size(width, scale), image.dtype, image.device)
     return rows @ image @ cols.T

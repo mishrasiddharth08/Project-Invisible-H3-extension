@@ -18,6 +18,20 @@ class AreaResizeTests(unittest.TestCase):
             with self.subTest(scale=scale):
                 torch.testing.assert_close(area_resize(image, scale), torch.nn.functional.avg_pool2d(image, block))
 
+    def test_even_half_never_builds_matrices_and_handles_noncontiguous_input(self):
+        from unittest.mock import patch
+        from pi_h3_image import resize
+        image = torch.rand(2, 3, 16, 12).transpose(-2, -1)
+        with patch.object(resize, "area_matrix", side_effect=AssertionError("dense weights")):
+            actual = resize.area_resize(image, Fraction(1, 2))
+        torch.testing.assert_close(actual, torch.nn.functional.avg_pool2d(image, 2))
+
+    def test_odd_half_keeps_the_exact_area_filter(self):
+        from pi_h3_image import resize
+        image = torch.rand(1, 3, 7, 9)
+        reference = resize.area_matrix(7, 4) @ image @ resize.area_matrix(9, 4).T
+        torch.testing.assert_close(resize.area_resize(image, Fraction(1, 2)), reference)
+
     def test_three_quarters_is_the_exact_area_mean(self):
         from pi_h3_image.resize import area_resize
         image = torch.rand(1, 3, 64, 96, dtype=torch.float64)

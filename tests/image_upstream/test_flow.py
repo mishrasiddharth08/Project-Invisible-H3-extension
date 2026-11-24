@@ -307,6 +307,16 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(tuple(self.engine.references[0].shape), (1, 1152, 2048, 3))
         self.assertEqual(tuple(self.engine.text_processing_engine_h3.images[0].shape), (1, 736, 1344, 3))
 
+    def test_pruna_img2img_processes_each_prompt_in_a_list(self):
+        self.use_ph3()
+        p = Img2Img()
+        p.prompt = ["add a hat", "Edit <Picture 2>. Use the red scarf.", "subject_definitions: a brief"]
+        integration.before_process(p)
+        self.assertEqual(p.prompt, ["Edit <Picture 1>. add a hat",
+                                    "Edit <Picture 2>. Use the red scarf.",
+                                    "subject_definitions: a brief"])
+        self.assertEqual((p.width, p.height), (WIDTH, HEIGHT))
+
     def test_img2img_needs_an_input_image_and_a_plain_resize(self):
         self.use_ph3()
         with self.assertRaisesRegex(H3Error, "Add an input image"):
@@ -403,16 +413,39 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(p.distilled_cfg_scale, 2.0)
 
     def test_the_ph3_preset_keeps_the_slider_and_fills_the_api_default(self):
-        sys.modules["modules.shared"].opts.forge_preset = "ph3"
+        from pi_h3_image.api_shift import patch_api
+
+        opts = sys.modules["modules.shared"].opts
+        opts.forge_preset = "ph3"
         p = Txt2Img()
         p.distilled_cfg_scale = 6.0
         self.run_until_sampling(p)
         self.assertEqual(p.distilled_cfg_scale, 6.0)
-        p = Txt2Img()
-        p.is_api = True
-        sys.modules["modules.shared"].opts.ph3_t2i_dcfg = 10.0
-        self.run_until_sampling(p)
-        self.assertEqual(p.distilled_cfg_scale, 10.0)
+        opts.ph3_t2i_dcfg = 10.0
+        opts.ph3_i2i_dcfg = 7.0
+        run = self.run_until_sampling
+
+        class Api:
+            def text2imgapi(self, request):
+                p = Txt2Img()
+                p.is_api = True
+                p.distilled_cfg_scale = request.distilled_cfg_scale
+                run(p)
+                return p.distilled_cfg_scale
+
+            def img2imgapi(self, request):
+                p = Img2Img()
+                p.is_api = True
+                p.distilled_cfg_scale = request.distilled_cfg_scale
+                run(p)
+                return p.distilled_cfg_scale
+
+        patch_api(Api)
+        api = Api()
+        omitted = types.SimpleNamespace(model_fields_set=set(), distilled_cfg_scale=3.5)
+        explicit = types.SimpleNamespace(model_fields_set={"distilled_cfg_scale"}, distilled_cfg_scale=3.5)
+        self.assertEqual((api.text2imgapi(omitted), api.img2imgapi(omitted)), (10.0, 7.0))
+        self.assertEqual(api.img2imgapi(explicit), 3.5)
 
     def test_the_clip_wrapper_asks_p_h3_image_for_its_five_hidden_states(self):
         from pi_h3_image.native import text_engine
@@ -486,6 +519,33 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(self.engine.output_scale, 1)
         self.assertNotIn("H3 Output scale", p.extra_generation_params)
         integration.postprocess(p, None)
+
+    def test_explicit_full_size_overrides_the_saved_downscale(self):
+        from fractions import Fraction
+
+        opts = sys.modules["modules.shared"].opts
+        opts.h3_output_scale = "1/2"
+        for value, expected in (("settings", Fraction(1, 2)), (None, Fraction(1, 2)),
+                                ("1", Fraction(1)), ("33% Lanczos", Fraction(33, 100))):
+            with self.subTest(value=value):
+                p = Txt2Img()
+                p.pi_h3_output_scale = value
+                self.run_until_sampling(p)
+                self.assertEqual(self.engine.output_scale, expected)
+                integration.postprocess(p, None)
+
+    def test_downscale_defers_only_for_a_refiner_advertising_output_resize(self):
+        from fractions import Fraction
+
+        for defer in (False, True):
+            p = Txt2Img()
+            p.pi_h3_output_scale = "33% Lanczos"
+            p._pi_refiner_can_resize_output = defer
+            self.run_until_sampling(p)
+            self.assertEqual(self.engine.output_scale, 1 if defer else Fraction(33, 100))
+            self.assertEqual(getattr(p, "_pi_refiner_output_scale", None),
+                             Fraction(33, 100) if defer else None)
+            integration.postprocess(p, None)
 
     def test_forehead_mark_guidance_preserves_explicit_requests_independently(self):
         guide = integration._guide_forehead_marks

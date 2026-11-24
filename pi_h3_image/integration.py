@@ -9,13 +9,12 @@ from fractions import Fraction
 from pathlib import Path
 
 from . import pictures
+from .api_shift import apply_shift
 from .contracts import GenerationRequest, H3Error, set_pending_error
 from .models import inspect_model, is_image_checkpoint, resolve_components
 from .resolution_shift import odds_factor
 from .resize import LANCZOS_33_PERCENT
 
-# StableDiffusionProcessing.distilled_cfg_scale when a request does not set it
-API_DEFAULT_DISTILLED_CFG = 3.5
 # img2img Resize mode "Just resize (latent upscale)": it would interpolate the placeholder latent
 LATENT_UPSCALE = 3
 
@@ -123,7 +122,9 @@ def output_scale(p=None) -> tuple[str, Fraction]:
     """The [H3] Output scale setting: its label and the fraction of each side of the decoded picture that is kept."""
     from modules import shared
     selected = getattr(p, "pi_h3_output_scale", None)
-    label = str(selected if selected is not None else getattr(shared.opts, OUTPUT_SCALE_SETTING, "1"))
+    overrides = getattr(p, "override_settings", None) or {}
+    default = overrides.get(OUTPUT_SCALE_SETTING, getattr(shared.opts, OUTPUT_SCALE_SETTING, "1"))
+    label = str(default if selected in (None, "settings") else selected)
     return (label, OUTPUT_SCALES[label]) if label in OUTPUT_SCALES else ("1", Fraction(1))
 
 
@@ -255,13 +256,7 @@ def process(p):
     p.extra_generation_params["H3 Model"] = profile.label
     if p.pi_h3_image_components.experimental:
         p.extra_generation_params["H3 Experimental"] = p.pi_h3_image_components.experimental
-    if getattr(shared.opts, "forge_preset", None) != profile.name:
-        # outside the profile's preset the slider is another model's Shift or Distilled CFG; keep the profile's own
-        # shift (and infotext)
-        p.distilled_cfg_scale = profile.shift
-    elif getattr(p, "is_api", False) and p.distilled_cfg_scale == API_DEFAULT_DISTILLED_CFG:
-        # an API request that leaves distilled_cfg_scale out gets Forge's Flux default; use the preset's Shift
-        p.distilled_cfg_scale = getattr(shared.opts, f"{profile.name}_t2i_dcfg", profile.shift)
+    apply_shift(p, profile, shared.opts)
 
 
 def before_sampling(p, noise):
