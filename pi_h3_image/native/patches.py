@@ -150,15 +150,17 @@ def _replace(sd: dict, prefix: str, asd: dict) -> None:
 def _hook_replace_state_dict() -> None:
     original = loader.replace_state_dict
 
-    def replace_state_dict(sd: dict, asd: dict, guess, path):
+    def replace_state_dict(sd: dict, asd: dict, *args, **kwargs):
+        # Newer Forge passes metadata before the model guess and path.
+        guess = kwargs["guess"] if "guess" in kwargs else args[-1 if "path" in kwargs else -2]
         if not isinstance(guess, model.MiniMaxH3):
-            return original(sd, asd, guess, path)
+            return original(sd, asd, *args, **kwargs)
         if _is_h3_text_encoder(asd):
             _replace(sd, f"{guess.text_encoder_key_prefix[0]}{TE_PREFIX}", asd)
         elif vae.is_h3_vae(asd):
             _replace(sd, guess.vae_key_prefix[0], vae.with_latent_stats(asd))
         else:
-            return original(sd, asd, guess, path)
+            return original(sd, asd, *args, **kwargs)
         return sd
 
     loader.replace_state_dict = replace_state_dict
