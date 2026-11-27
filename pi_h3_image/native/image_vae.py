@@ -494,10 +494,15 @@ class H3ImageVAE(nn.Module):
         slices = [z_row[..., j_pos // self.vae_ratio:(j_pos + j_len) // self.vae_ratio] for j_pos, j_len in zip(x_idx, x_len)]
         for k in range(0, len(slices), batch):
             group = slices[k:k + batch]
-            yield from self._decode_pixels(torch.cat(group)).chunk(len(group))
+            if len(group) == 1:
+                yield self._decode_pixels(group[0].contiguous())
+            else:
+                yield from self._decode_pixels(torch.cat(group)).chunk(len(group))
 
     def tiled_decode(self, z):
         height, width = z.shape[-2] * self.vae_ratio, z.shape[-1] * self.vae_ratio
+        if height <= self.tile_size and width <= self.tile_size:
+            return self._decode_pixels(z.contiguous())
         y_idx, y_len, y_overlap = self.split_tiles(height)
         x_idx, x_len, x_overlap = self.split_tiles(width)
 

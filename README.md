@@ -35,6 +35,13 @@ FL2VA/Ref2VA checkpoints for stills and video.
 4. In **img2img**, add an input image. **Settings → MiniMax H3 → Enable Reference**
    chooses prompt-based editing when enabled and normal denoising when disabled.
 
+**MiniMax-H3-Image VAE choice.** Keep `minimax_h3_image_vae_fp16.safetensors`
+and the optional [Ostris FP16 image VAE](https://huggingface.co/ostris/ostris_h3_image_vae/blob/main/ostris_h3_image_vae_fp16.safetensors)
+side by side in `models/VAE`. Refresh the model list and select **one** image
+VAE alongside your existing text encoder under **VAE / Text Encoder**.
+Ostris fine-tuned the decoder to reduce oversharpening. To compare, use
+the same seed, prompt, dimensions and sampler, with **Downscale → Full size**.
+
 For **MiniMax-H3-Image only**, the native Width and Height sliders in both tabs
 run from 64 to 4096 in steps of 32. Use **4096 x 4096** for the full
 **16,777,216-pixel** area, or **3072 x 4096** for a 3:4 portrait.
